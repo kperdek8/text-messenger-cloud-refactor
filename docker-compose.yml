@@ -1,0 +1,46 @@
+services:
+  server:
+    build:
+      context: ./text-messenger-server
+      dockerfile: Dockerfile
+    environment:
+      MIX_ENV: prod
+      DATABASE_URL: "ecto://postgres:postgres@db:5432/text_messenger_prod"
+      SECRET_KEY_BASE: "zamienic_na_zmienna_srodowiskowa"
+      PORT: 4001
+      PHX_HOST: "server"
+    ports:
+      - "4001:4001"
+    depends_on:
+      - db
+    restart: always
+
+  client:
+    build:
+      context: ./text-messenger-client
+      dockerfile: Dockerfile
+    environment:
+        SECRET_KEY_BASE: "tez_zamienic_na_zmienna_srodowiskowa"
+        API_URL: "http://server:4001/api"
+        SOCKET_URL: "ws://server:4001/socket/websocket"
+    ports:
+      - "4000:4000"
+    depends_on:
+      - server
+    volumes:
+      - client_data:/app
+    restart: always
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: text_messenger_chmury
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  pg_data:
+  client_data:
