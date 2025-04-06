@@ -9,6 +9,7 @@ defmodule TextMessengerServer.Accounts do
   Registers a new user with hashed password.
   """
   def register_user(attrs) do
+    IO.inspect(attrs)
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
@@ -27,7 +28,7 @@ defmodule TextMessengerServer.Accounts do
       %{id: id, username: username} ->
         # Convert the Ecto user to Protobuf user
         user_proto = %Protobuf.User{
-          id: id |> Ecto.UUID.cast!(),   # Ensure that the id is a string UUID
+          id: id,
           name: username
         }
         {:ok, user_proto}
@@ -41,30 +42,11 @@ defmodule TextMessengerServer.Accounts do
     users_proto = %Protobuf.Users{
       users: Enum.map(users, fn %User{id: id, username: username} ->
         %Protobuf.User{
-          id: Ecto.UUID.cast!(id),  # Convert UUID to string
+          id: id,
           name: username
         }
       end)
     }
     {:ok, users_proto}
-  end
-
-  @doc """
-  Verifies a user's credentials by checking the password hash.
-  """
-  def authenticate_user(username, password) do
-    user = Repo.get_by(User, username: username)
-
-    case user do
-      nil ->
-        {:error, :not_found}
-
-      user ->
-        if Bcrypt.verify_pass(password, user.hashed_password) do
-          {:ok, user}
-        else
-          {:error, :unauthorized}
-        end
-    end
   end
 end

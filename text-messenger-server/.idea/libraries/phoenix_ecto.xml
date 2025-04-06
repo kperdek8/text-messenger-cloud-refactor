@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="phoenix_ecto" type="mix">
+    <CLASSES />
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/phoenix_ecto/lib" />
+    </SOURCES>
+  </library>
+</component>

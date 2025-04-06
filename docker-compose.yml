@@ -24,7 +24,7 @@ services:
         API_URL: "http://server:4001/api"
         SOCKET_URL: "ws://server:4001/socket/websocket"
     ports:
-      - "4000:4000"
+      - "80:4000"
     depends_on:
       - server
     volumes:

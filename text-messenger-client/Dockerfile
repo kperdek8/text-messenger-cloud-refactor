@@ -43,7 +43,7 @@ RUN mkdir config
 # to ensure any relevant config change will trigger the dependencies
 # to be re-compiled.
 COPY config/config.exs config/${MIX_ENV}.exs config/
-RUN mix deps.compile
+RUN mix deps.compile --only $MIX_ENV
 
 COPY priv priv
 
@@ -60,17 +60,15 @@ RUN mix compile
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
 
-COPY rel rel
-
 # Generate SECRET_KEY_BASE during the build phase and store it
 RUN SECRET_KEY_BASE=$(mix phx.gen.secret) && echo "$SECRET_KEY_BASE" > /app/secret_key_base
 
+COPY rel rel
 RUN mix release
-
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
-FROM ${RUNNER_IMAGE}
+FROM ${RUNNER_IMAGE} as runner
 
 RUN apt-get update -y && \
   apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates \
@@ -94,16 +92,15 @@ COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/text_messenge
 COPY --from=builder /app/secret_key_base /app/secret_key_base
 
 # Set the SECRET_KEY_BASE environment variable at runtime
-ENV SECRET_KEY_BASE_FILE=/app/secret_key_base
+ENV SECRET_KEY_BASE=/app/secret_key_base
 
-EXPOSE 4000
+USER nobody
 
 # If using an environment that doesn't automatically reap zombie processes, it is
 # advised to add an init process such as tini via `apt-get install`
 # above and adding an entrypoint. See https://github.com/krallin/tini for details
 # ENTRYPOINT ["/tini", "--"]
 
-USER nobody
+EXPOSE 4000
 
-# Start the Phoenix application
-CMD ["sh", "-c", "export SECRET_KEY_BASE=$(cat $SECRET_KEY_BASE_FILE) && /app/bin/server"]
+CMD ["sh", "-c", "export SECRET_KEY_BASE=$(cat $SECRET_KEY_BASE) && /app/bin/server"]

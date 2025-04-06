@@ -1,6 +1,6 @@
 defmodule TextMessengerClientWeb.LoginPage do
   use TextMessengerClientWeb, :live_view
-
+  require Logger
   import TextMessengerClient.UsersAPI
 
   def mount(_params, _session, socket) do
@@ -16,11 +16,14 @@ defmodule TextMessengerClientWeb.LoginPage do
   end
 
   def handle_event("login", %{"username" => username, "password" => password}, socket) do
-    with {:ok, {token, _username, _user_id}} <- login(username, password) do
+    with {:ok, {access_token, id_token, _refresh_token}} <- login(username, password) do
       # Trigger the JavaScript hook event with the token
-      {:noreply, push_event(socket, "trigger_login_post", %{token: token})}
+      {:noreply, push_event(socket, "trigger_login_post", %{access_token: access_token, id_token: id_token})}
     else
       {:error, %{"error" => error}} -> {:noreply, assign(socket, message: error)}
+      {:error, error} ->
+        Logger.warning("Unexpected error #{inspect(error)}")
+        {:noreply, socket}
     end
   end
 
@@ -29,7 +32,7 @@ defmodule TextMessengerClientWeb.LoginPage do
       with {:ok, message} <- TextMessengerClient.UsersAPI.register(username, password) do
         {:noreply, assign(socket, :message, message)}
       else
-        {:error, details} -> {:noreply, assign(socket, message: format_error(details))}
+        {:error, details} -> {:noreply, assign(socket, message: details)}
       end
     else
       {:noreply, assign(socket, :message, "Passwords do not match.")}
@@ -92,7 +95,8 @@ defmodule TextMessengerClientWeb.LoginPage do
 
         <!-- Hidden Form for POST Request (will be submitted by JS hook) -->
         <form id="hidden-login-form" action="/login" method="POST" style="display: none;">
-          <input type="hidden" id="token-input" name="token" />
+          <input type="hidden" id="access-token-input" name="access-token" />
+          <input type="hidden" id="id-token-input" name="id-token" />
           <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
         </form>
 

@@ -1,57 +1,58 @@
 defmodule TextMessengerServerWeb.UserAuthController do
   use TextMessengerServerWeb, :controller
   alias TextMessengerServer.Accounts
+  alias TextMessengerServer.AWS, as: AWS
+
 
   def register(conn, %{"username" => username, "password" => password}) do
-    case Accounts.register_user(%{username: username, password: password}) do
-      {:ok, _user} ->
+    with {:ok, %{"UserSub" => id}} <- AWS.register(username, password, "development@test.com"),
+         {:ok, _user} <- Accounts.register_user(%{id: id,username: username}) do
         conn
         |> put_status(:created)
-        |> json(%{message: "Registration successful!", username: username})
-
-      {:error, changeset} ->
+        |> put_resp_content_type("application/json")
+        |> json(%{message: "Registration successful!"})
+    else
+      {:error, :username_taken} ->
         conn
         |> put_status(:unprocessable_entity)
+        |> put_resp_content_type("application/json")
         |> json(%{
           error: "registration_failed",
-          details: translate_changeset_errors(changeset)
+          details: "Username taken!"
+        })
+      {:error, :invalid_password} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_resp_content_type("application/json")
+        |> json(%{
+          error: "registration_failed",
+          details: "Password does not match requirements!"
+        })
+      # Maybe Ecto error
+      {:error, _} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_resp_content_type("application/json")
+        |> json(%{
+          error: "registration_failed",
+          details: "Unknown error occured, ask administrator for help"
         })
     end
   end
 
   def login(conn, %{"username" => username, "password" => password}) do
-    case Accounts.authenticate_user(username, password) do
-      {:ok, user} ->
-        claims = %{
-          "sub" => user.id,
-          "exp" => DateTime.utc_now() |> DateTime.add(24 * 60 * 60, :second) |> DateTime.to_unix(:seconds),
-          "username" => user.username
-        }
-        {:ok, token, _claims} = TextMessengerServerWeb.Auth.Guardian.encode_and_sign(user, claims)
+    case AWS.login(username, password) do
+      {:ok, %{access_token: access_token, id_token: id_token, refresh_token: refresh_token}} ->
         conn
         |> put_status(:ok)
-        |> json(%{message: "Login successful!", token: token, username: user.username, user_id: user.id})
-
-      {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "User not found"})
+        |> put_resp_content_type("application/json")
+        |> json(%{message: "Login successful!",access_token: access_token, id_token: id_token, refresh_token: refresh_token})
 
       {:error, :unauthorized} ->
         conn
         |> put_status(:unauthorized)
+        |> put_resp_content_type("application/json")
         |> json(%{error: "Invalid password"})
     end
-  end
-
-  # Helper function to translate and format changeset errors
-  defp translate_changeset_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, &translate_error/1)
-  end
-
-  defp translate_error({msg, opts}) do
-    Enum.reduce(opts, msg, fn {key, value}, acc ->
-      String.replace(acc, "%{#{key}}", to_string(value))
-    end)
   end
 end

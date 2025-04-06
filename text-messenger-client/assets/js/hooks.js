@@ -11,12 +11,13 @@ Hooks.SubmitLogoutForm = {
 
 Hooks.SubmitLoginForm = {
   mounted() {
-    this.handleEvent("trigger_login_post", ({ token }) => {
-      console.log("Test123");
+    this.handleEvent("trigger_login_post", ({access_token, id_token}) => {
       const hiddenForm = document.getElementById("hidden-login-form");
-      const tokenInput = document.getElementById("token-input");
+      const accessTokenInput = document.getElementById("access-token-input");
+      const idTokenInput = document.getElementById("id-token-input");
 
-      tokenInput.value = token; // Set the token in a hidden field
+      accessTokenInput.value = access_token;
+      idTokenInput.value = id_token;
       hiddenForm.submit();
     });
   },

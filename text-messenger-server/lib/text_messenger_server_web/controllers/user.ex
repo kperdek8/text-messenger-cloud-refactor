@@ -6,7 +6,7 @@ defmodule TextMessengerServerWeb.UserController do
   alias TextMessengerServer.Protobuf.{User,Users}
 
   def fetch_chat_members(conn, %{"id" => chat_id}) do
-    {:ok, %User{id: user_id}} = Guardian.Plug.current_resource(conn)
+    user_id = conn.assigns.user.id
     if Chats.is_user_member_of_chat?(user_id, chat_id) do
       {:ok, users} = Chats.get_chat_members(chat_id)
 
@@ -15,6 +15,7 @@ defmodule TextMessengerServerWeb.UserController do
       |> send_resp(200, Users.encode(users))
     else
       conn
+      |> put_resp_content_type("application/json")
       |> send_resp(403, Jason.encode!(%{error: "You are not member of this chat"}))
     end
   end
@@ -41,6 +42,7 @@ defmodule TextMessengerServerWeb.UserController do
             |> send_resp(200, User.encode(user))
           {:error, message} ->
             conn
+            |> put_resp_content_type("application/json")
             |> send_resp(404, Jason.encode!(%{error: message}))
         end
     end

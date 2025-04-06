@@ -1,16 +1,15 @@
 defmodule TextMessengerServerWeb.UserSocket do
   use Phoenix.Socket
 
-  alias TextMessengerServerWeb.Auth.Guardian
+  alias TextMessengerServerWeb.Auth.Cognito
 
   channel "chat:*", TextMessengerServerWeb.ChatChannel
   channel "notifications:*", TextMessengerServerWeb.NotificationChannel
 
   def connect(%{"token" => token}, socket, _connect_info) do
-    case Guardian.decode_and_verify(token) do
-      {:ok, claims} ->
-        user_id = Map.get(claims, "sub")
-        {:ok, assign(socket, token: token, user_id: user_id)}
+    case Cognito.verify_and_get_user(token) do
+      {:ok, user} ->
+        {:ok, assign(socket, user_id: user.id, username: user.name)}
       {:error, reason} ->
         {:error, reason}
     end

@@ -3,8 +3,7 @@ defmodule TextMessengerClient.RequestHandler do
 
   def fetch_request(endpoint, token \\ nil) do
     headers = [
-      {"Content-Type", "application/json"},
-      {"Accept", "application/x-protobuf"}
+      {"Content-Type", "application/json"}
     ]
 
     headers = if token, do: [{"Authorization", "Bearer #{token}"} | headers], else: headers
@@ -38,7 +37,6 @@ defmodule TextMessengerClient.RequestHandler do
   def post_request(endpoint, payload, token \\ nil) do
     headers = [
       {"Content-Type", "application/json"},
-      {"Accept", "application/json, application/x-protobuf"}
     ]
 
     headers = if token, do: [{"Authorization", "Bearer #{token}"} | headers], else: headers
@@ -57,6 +55,7 @@ defmodule TextMessengerClient.RequestHandler do
             {:ok, status_code, body} # Leave protobuf decoding to calling function
 
         _ ->
+          Logger.warning("Unsupported content type #{content_type} in response")
           {:error, "Unsupported content type: #{content_type}"}
       end
 
@@ -67,11 +66,9 @@ defmodule TextMessengerClient.RequestHandler do
 
 
   defp get_content_type(headers) do
-    headers
-    |> Enum.find(fn {key, _} -> key == "content-type" end)
-    |> case do
-         nil -> nil
-         {"content-type", type}  -> String.split(type, ";") |> List.first()
-       end
+    case Enum.find(headers, fn {key, _} -> String.downcase(key) == "content-type" end) do
+      nil -> nil
+      {_, type} -> String.split(type, ";") |> List.first() |> String.trim()
+    end
   end
 end

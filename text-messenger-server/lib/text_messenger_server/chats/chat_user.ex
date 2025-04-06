@@ -5,7 +5,7 @@ defmodule TextMessengerServer.Chats.ChatUser do
   @primary_key false
   schema "chat_users" do
     belongs_to(:chat, TextMessengerServer.Chats.Chat, type: :binary_id)
-    belongs_to(:user, TextMessengerServer.Accounts.User, type: :binary_id)
+    belongs_to(:user, TextMessengerServer.Accounts.User, type: :string)
   end
 
   @doc false

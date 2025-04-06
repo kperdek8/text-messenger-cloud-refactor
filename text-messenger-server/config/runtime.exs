@@ -31,7 +31,10 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :text_messenger_server, TextMessengerServer.Repo,
-    # ssl: true,
+    ssl: true,
+	ssl_opts: [
+	  verify: :verify_none
+	],
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
@@ -48,7 +51,7 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "localhost"
+  host = System.get_env("PHX_HOST") || "0.0.0.0"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :text_messenger_server, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")

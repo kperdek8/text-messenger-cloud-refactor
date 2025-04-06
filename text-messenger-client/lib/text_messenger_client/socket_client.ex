@@ -4,27 +4,27 @@ defmodule TextMessengerClient.SocketClient do
   alias TextMessengerClient.Helpers.JWT
 
   defmodule WebSocket do
-    defstruct [:socket, :chat_channel, :notif_channel, :token, :chat_id, :liveview_pid]
+    defstruct [:socket, :chat_channel, :notif_channel, :access_token, :id_token, :chat_id, :liveview_pid]
   end
 
-  def start(token) do
-    socket_url = Application.get_env(:text_messenger_client, :socket_url)
+  def start(access_token, id_token) do
+    socket_url = Application.fetch_env!(:text_messenger_client, :socket_url)
 
     {:ok, socket} = PhoenixClient.Socket.start_link(
       url: socket_url,
-      params: %{token: token}
+      params: %{token: access_token}
     )
 
     wait_for_connection(socket)
     notif_channel =
-      case join_notif_channel(socket, token) do
+      case join_notif_channel(socket, id_token) do
         {:ok, channel} -> channel
         {:error, %{"reason" => reason}} ->
           IO.inspect("Could not join notification channel: #{reason}")
           nil
       end
 
-    {:ok, %WebSocket{socket: socket, chat_channel: nil, notif_channel: notif_channel, token: token, chat_id: nil}}
+    {:ok, %WebSocket{socket: socket, chat_channel: nil, notif_channel: notif_channel, access_token: access_token, id_token: id_token, chat_id: nil}}
   end
 
   def send_message(%WebSocket{chat_channel: channel, chat_id: chat_id}, content) do
@@ -94,8 +94,8 @@ defmodule TextMessengerClient.SocketClient do
   defp join_notif_channel(socket, token) do
     Logger.info("Joining notification channel")
     {:ok, payload} = JWT.decode_payload(token)
-    user_id = payload["sub"]
-    topic = "notifications:#{user_id}"
+    username = payload["sub"]
+    topic = "notifications:#{username}"
 
     case PhoenixClient.Channel.join(socket, topic) do
       {:ok, _, channel} ->

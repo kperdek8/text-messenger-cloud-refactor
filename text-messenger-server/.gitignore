@@ -22,6 +22,9 @@ erl_crash.dump
 # Ignore batch scripts
 *.bat
 
+# Ignore .idea
+/.idea/
+
 # Temporary files, for example, from tests.
 /tmp/
 

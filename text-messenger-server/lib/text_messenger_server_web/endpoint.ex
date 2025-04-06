@@ -16,7 +16,7 @@ defmodule TextMessengerServerWeb.Endpoint do
     longpoll: [connect_info: [session: @session_options]]
 
   socket "/socket", TextMessengerServerWeb.UserSocket,
-    websocket: true,
+    websocket: [timeout: 45_000],
     longpoll: false
 
   # Serve at "/" the static files from "priv/static" directory.

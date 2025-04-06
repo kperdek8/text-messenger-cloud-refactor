@@ -4,7 +4,7 @@ defmodule TextMessengerServer.Chats.ChatMessage do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "chat_messages" do
-    belongs_to(:user, TextMessengerServer.Accounts.User, type: :binary_id)
+    belongs_to(:user, TextMessengerServer.Accounts.User, type: :string)
     belongs_to(:chat, TextMessengerServer.Chats.Chat, type: :binary_id)
     field(:content, :string)
     field(:timestamp, :utc_datetime)

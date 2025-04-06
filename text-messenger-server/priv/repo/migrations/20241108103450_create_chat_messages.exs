@@ -4,7 +4,7 @@ defmodule TextMessengerServer.Repo.Migrations.CreateChatMessages do
   def change do
     create table(:chat_messages, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
-      add(:user_id, references(:users, type: :binary_id, on_delete: :delete_all))
+      add(:user_id, references(:users, type: :string, on_delete: :delete_all))
       add(:chat_id, references(:chats, type: :binary_id, on_delete: :delete_all))
       add(:content, :string, null: false)
       add(:timestamp, :utc_datetime, null: false)

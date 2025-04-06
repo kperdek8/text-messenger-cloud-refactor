@@ -52,10 +52,13 @@ defmodule TextMessengerServer.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.5"},
+      {:bandit, "== 1.5.7"},
       {:protobuf, "~> 0.13.0"},
-      {:bcrypt_elixir, "~> 3.2.0"},
-      {:guardian, "~> 2.3"}
+      {:joken, "~> 2.6"},
+      #{:joken_jwks, "~> 1.7"},
+      {:httpoison, "== 2.2.1"},
+      {:aws, "~> 1.0"},
+      {:hackney, "== 1.20.1"}
     ]
   end
 

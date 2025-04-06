@@ -153,7 +153,7 @@ defmodule TextMessengerServer.Chats do
 
   defp to_protobuf_user(%User{id: id, username: username}) do
     %Protobuf.User{
-      id: Ecto.UUID.cast!(id),
+      id: id,
       name: username
     }
   end
@@ -181,7 +181,7 @@ defmodule TextMessengerServer.Chats do
   defp to_protobuf_message(%ChatMessage{id: id, user_id: user_id, chat_id: chat_id, content: content, timestamp: timestamp}) do
     %Protobuf.ChatMessage{
       id: Ecto.UUID.cast!(id),
-      user_id: Ecto.UUID.cast!(user_id),
+      user_id: user_id,
       chat_id: Ecto.UUID.cast!(chat_id),
       content: content,
       timestamp: DateTime.to_string(timestamp),

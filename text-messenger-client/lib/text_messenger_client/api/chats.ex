@@ -4,7 +4,7 @@ defmodule TextMessengerClient.ChatsAPI do
   alias TextMessengerClient.Protobuf.{Chats, Chat}
 
   def fetch_chats(token) do
-    api_url = Application.get_env(:text_messenger_client, :api_url)
+    api_url = Application.fetch_env!(:text_messenger_client, :api_url)
     endpoint_url = "#{api_url}/chats"
 
     with {:ok, body} <- fetch_request(endpoint_url, token) do
@@ -15,7 +15,7 @@ defmodule TextMessengerClient.ChatsAPI do
   end
 
   def fetch_chat(token, id) do
-    api_url = Application.get_env(:text_messenger_client, :api_url)
+    api_url = Application.fetch_env!(:text_messenger_client, :api_url)
     endpoint_url = "#{api_url}/chats/#{id}"
 
     with {:ok, body} <- fetch_request(endpoint_url, token) do
@@ -26,7 +26,7 @@ defmodule TextMessengerClient.ChatsAPI do
   end
 
   def create_chat(token, name) do
-    api_url = Application.get_env(:text_messenger_client, :api_url)
+    api_url = Application.fetch_env!(:text_messenger_client, :api_url)
     params = URI.encode_query(%{name: name})
     endpoint_url = "#{api_url}/chats/?#{params}"
 

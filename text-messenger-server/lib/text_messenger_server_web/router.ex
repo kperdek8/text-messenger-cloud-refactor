@@ -5,6 +5,10 @@ defmodule TextMessengerServerWeb.Router do
     plug(:accepts, ["json", "x-protobuf"])
   end
 
+  pipeline :cognito_auth do
+    plug TextMessengerServerWeb.Auth.Cognito
+  end
+
   scope "/api", TextMessengerServerWeb do
     pipe_through(:api)
 
@@ -12,9 +16,9 @@ defmodule TextMessengerServerWeb.Router do
     post("/users/login", UserAuthController, :login)
   end
 
-  # Routes requiring JWT authentication
+  # Routes requiring Cognito token authorization
   scope "/api", TextMessengerServerWeb do
-    pipe_through([:api, TextMessengerServerWeb.Auth.Pipeline])
+    pipe_through([:api, :cognito_auth])
 
     get("/users/:id", UserController, :fetch_user)
     get("/users", UserController, :fetch_users)

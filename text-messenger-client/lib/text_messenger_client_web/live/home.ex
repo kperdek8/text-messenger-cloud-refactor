@@ -8,11 +8,12 @@ defmodule TextMessengerClientWeb.HomePage do
   require Logger
 
   def mount(_params, session, socket) do
-    token = Map.get(session, "token", nil)
-    if is_nil(token) do
+    access_token = Map.get(session, "access_token", nil)
+    id_token = Map.get(session, "id_token", nil)
+    if is_nil(access_token) do
       {:ok, socket |> redirect(to: "/login")}
     else
-      with {:ok, socket} <- assign_initial_state(socket, token),
+      with {:ok, socket} <- assign_initial_state(socket, {access_token, id_token}),
            {:ok, socket} <- extract_logged_in_user_data(socket),
            {:ok, socket} <- connect_to_websocket(socket),
            {:ok, socket} <- fetch_chats(socket),
@@ -69,7 +70,7 @@ defmodule TextMessengerClientWeb.HomePage do
     if String.trim(chat_name) == "" do
       {:noreply, assign(socket, form_error: "Chat name cannot be empty")}
     else
-      new_chat = ChatsAPI.create_chat(socket.assigns.token, chat_name)
+      new_chat = ChatsAPI.create_chat(socket.assigns.access_token, chat_name)
       {:noreply, assign(socket, show_create_chat_modal: false, form_error: nil, chats: [new_chat | socket.assigns.chats])}
     end
   end
@@ -213,7 +214,7 @@ defmodule TextMessengerClientWeb.HomePage do
       <div id="chat" class="flex flex-col grow h-full border-gray-700">
         <div id="chat_messages" class="flex flex-col-reverse w-full h-full overflow-y-auto bg-gray-900 p-2 rounded-lg">
           <%= for %{id: id, content: message, user_id: user_id} <- @messages, not is_nil(message) do %>
-            <.live_component module={TextMessengerClientWeb.ChatMessageComponent} id={id} message={message} user={get_user_name(user_id, @token)} />
+            <.live_component module={TextMessengerClientWeb.ChatMessageComponent} id={id} message={message} user={get_user_name(user_id, @access_token)} />
           <% end %>
         </div>
 
@@ -321,14 +322,14 @@ defmodule TextMessengerClientWeb.HomePage do
   """
   end
 
-  defp assign_initial_state(socket, token) do
+  defp assign_initial_state(socket, {access_token, id_token}) do
     {:ok,
      socket
-       |> assign(token: token)
+       |> assign(access_token: access_token, id_token: id_token)
        |> assign(show_create_chat_modal: false, show_add_user_modal: false, form_error: nil, message_input: "")}
   end
 
-  defp fetch_chat(%{assigns: %{token: token, chats: chats}} = socket, id) when not is_nil(token) do
+  defp fetch_chat(%{assigns: %{access_token: token, chats: chats}} = socket, id) when not is_nil(token) do
     with %Chat{} = chat <- ChatsAPI.fetch_chat(token, id) do
       {:ok, socket |> assign(chats: [chat | chats])}
     else
@@ -344,7 +345,7 @@ defmodule TextMessengerClientWeb.HomePage do
     {:ok, socket}
   end
 
-  defp fetch_chats(%{assigns: %{token: token}} = socket) when not is_nil(token) do
+  defp fetch_chats(%{assigns: %{access_token: token}} = socket) when not is_nil(token) do
     with %Chats{chats: chats} <- ChatsAPI.fetch_chats(token) do
       {:ok, socket |> assign(chats: chats)}
     else
@@ -389,7 +390,7 @@ defmodule TextMessengerClientWeb.HomePage do
     {:ok, socket |> assign(chats: updated_chats)}
   end
 
-  defp fetch_user(%{assigns: %{token: token, users: users}} = socket, id) when not is_nil(token) do
+  defp fetch_user(%{assigns: %{access_token: token, users: users}} = socket, id) when not is_nil(token) do
     with %User{name: username} = user <- UsersAPI.fetch_user(token, id) do
       Cache.put_username(id, username)
       {:ok, socket |> assign(users: [user | users])}
@@ -408,7 +409,7 @@ defmodule TextMessengerClientWeb.HomePage do
     {:ok, socket}
   end
 
-  defp fetch_users(%{assigns: %{token: token, selected_chat: id}} = socket) when not is_nil(token) and not is_nil(id) do
+  defp fetch_users(%{assigns: %{access_token: token, selected_chat: id}} = socket) when not is_nil(token) and not is_nil(id) do
     with %Users{users: users} <- UsersAPI.fetch_chat_members(token, id) do
       Enum.each(users, fn user ->
         Cache.put_username(user.id, user.name)
@@ -448,7 +449,7 @@ defmodule TextMessengerClientWeb.HomePage do
     {:ok, socket |> assign(users: updated_users)}
   end
 
-  defp fetch_messages(%{assigns: %{token: token, selected_chat: id}} = socket) when not is_nil(token) and not is_nil(id) do
+  defp fetch_messages(%{assigns: %{access_token: token, selected_chat: id}} = socket) when not is_nil(token) and not is_nil(id) do
     with %ChatMessages{messages: messages} <- MessagesAPI.fetch_messages(token, id) do
       {:ok, socket |> assign(messages: messages)}
     else
@@ -464,15 +465,15 @@ defmodule TextMessengerClientWeb.HomePage do
     {:ok, socket |> assign(messages: [])}
   end
 
-  defp connect_to_websocket(%{assigns: %{token: token}} = socket) do
-    {:ok, websocket} = TextMessengerClient.SocketClient.start(token)
+  defp connect_to_websocket(%{assigns: %{access_token: access_token, id_token: id_token}} = socket) do
+    {:ok, websocket} = TextMessengerClient.SocketClient.start(access_token, id_token)
     {:ok, socket |> assign(websocket: websocket)}
   end
 
-  defp extract_logged_in_user_data(%{assigns: %{token: token}} = socket) do
+  defp extract_logged_in_user_data(%{assigns: %{id_token: token}} = socket) do
     with {:ok, payload} <- JWT.decode_payload(token),
          user_id <- payload["sub"],
-         username <- payload["username"] do
+         username <- payload["nickname"] do
       socket =
         socket
         |> assign(username: username)
