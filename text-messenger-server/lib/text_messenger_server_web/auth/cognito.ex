@@ -57,7 +57,8 @@ defmodule TextMessengerServerWeb.Auth.Cognito do
 
       Joken.verify_and_validate(token_config, token, signer)
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

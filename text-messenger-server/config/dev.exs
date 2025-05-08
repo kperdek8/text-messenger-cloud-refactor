@@ -4,7 +4,7 @@ import Config
 config :text_messenger_server, TextMessengerServer.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
+  hostname: "127.0.0.1",
   database: "text_messenger_server_chmury_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,

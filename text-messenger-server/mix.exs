@@ -5,7 +5,7 @@ defmodule TextMessengerServer.MixProject do
     [
       app: :text_messenger_server,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.18.3",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -56,9 +56,7 @@ defmodule TextMessengerServer.MixProject do
       {:protobuf, "~> 0.13.0"},
       {:joken, "~> 2.6"},
       #{:joken_jwks, "~> 1.7"},
-      {:httpoison, "== 2.2.1"},
-      {:aws, "~> 1.0"},
-      {:hackney, "== 1.20.1"}
+      {:httpoison, "~> 2.2"}
     ]
   end
 

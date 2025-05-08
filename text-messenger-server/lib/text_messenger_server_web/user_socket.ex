@@ -11,6 +11,7 @@ defmodule TextMessengerServerWeb.UserSocket do
       {:ok, user} ->
         {:ok, assign(socket, user_id: user.id, username: user.name)}
       {:error, reason} ->
+        IO.inspect(reason)
         {:error, reason}
     end
   end
