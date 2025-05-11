@@ -1,7 +1,7 @@
 defmodule TextMessengerClient.MessagesAPI do
   alias HTTPoison
   import TextMessengerClient.RequestHandler
-  alias TextMessengerClient.Protobuf.ChatMessages
+  alias TextMessenger.Protobuf.ChatMessages
 
   def fetch_messages(token, id) do
     api_url = Application.fetch_env!(:text_messenger_client, :api_url)

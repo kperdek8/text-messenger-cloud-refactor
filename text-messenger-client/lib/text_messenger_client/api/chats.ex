@@ -1,11 +1,11 @@
 defmodule TextMessengerClient.ChatsAPI do
   alias HTTPoison
   import TextMessengerClient.RequestHandler
-  alias TextMessengerClient.Protobuf.{Chats, Chat}
+  alias TextMessenger.Protobuf.{Chats, Chat}
 
   def fetch_chats(token) do
     api_url = Application.fetch_env!(:text_messenger_client, :api_url)
-    endpoint_url = "#{api_url}/chats"
+    endpoint_url = "#{api_url}/chats/"
 
     with {:ok, body} <- fetch_request(endpoint_url, token) do
       Chats.decode(body)

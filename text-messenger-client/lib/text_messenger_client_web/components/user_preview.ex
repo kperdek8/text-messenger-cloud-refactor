@@ -1,6 +1,6 @@
 defmodule TextMessengerClientWeb.UserPreviewComponent do
   use Phoenix.LiveComponent
-  alias TextMessengerClient.Protobuf.User
+  alias TextMessenger.Protobuf.User
 
   def update(%{user: %User{} = user}, socket) do
     {:ok, assign(socket, user: user, menu_open: false)}

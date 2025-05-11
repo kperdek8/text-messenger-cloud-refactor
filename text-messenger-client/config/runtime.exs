@@ -52,8 +52,8 @@ if config_env() == :prod do
     secret_key_base: secret_key_base
 	
   config :text_messenger_client,
-    api_url: System.get_env("API_URL") || "http://127.0.0.1:4001/api",
-    socket_url: System.get_env("SOCKET_URL") || "http://127.0.0.1:4001/socket/websocket"
+    api_url: System.get_env("API_URL") || "http://127.0.0.1:8080/api",
+    socket_url: System.get_env("SOCKET_URL") || "ws://127.0.0.1:8080/socket/websocket"
 
   # ## SSL Support
   #

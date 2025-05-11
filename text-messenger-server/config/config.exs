@@ -21,7 +21,7 @@ config :text_messenger_server, TextMessengerServerWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [json: TextMessengerServerWeb.ErrorJSON],
+    formats: [view: TextMessengerServerWeb.ErrorJSON],
     layout: false
   ],
   pubsub_server: TextMessengerServer.PubSub,

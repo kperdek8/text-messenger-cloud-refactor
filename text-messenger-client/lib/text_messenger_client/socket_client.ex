@@ -9,12 +9,10 @@ defmodule TextMessengerClient.SocketClient do
 
   def start(access_token, id_token) do
     socket_url = Application.fetch_env!(:text_messenger_client, :socket_url)
-
     {:ok, socket} = PhoenixClient.Socket.start_link(
       url: socket_url,
       params: %{token: access_token}
     )
-
     wait_for_connection(socket)
     notif_channel =
       case join_notif_channel(socket, id_token) do
@@ -23,7 +21,6 @@ defmodule TextMessengerClient.SocketClient do
           IO.inspect("Could not join notification channel: #{reason}")
           nil
       end
-
     {:ok, %WebSocket{socket: socket, chat_channel: nil, notif_channel: notif_channel, access_token: access_token, id_token: id_token, chat_id: nil}}
   end
 

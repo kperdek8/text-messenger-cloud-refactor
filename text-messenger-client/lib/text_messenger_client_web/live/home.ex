@@ -1,7 +1,7 @@
 defmodule TextMessengerClientWeb.HomePage do
   use TextMessengerClientWeb, :live_view
   alias TextMessengerClient.{ChatsAPI, MessagesAPI, UsersAPI}
-  alias TextMessengerClient.Protobuf.{ChatMessages, User, Users, Chat, Chats}
+  alias TextMessenger.Protobuf.{ChatMessages, User, Users, Chat, Chats}
   alias TextMessengerClient.Helpers.{JWT}
   alias TextMessengerClient.Cache
 
@@ -410,7 +410,7 @@ defmodule TextMessengerClientWeb.HomePage do
   end
 
   defp fetch_users(%{assigns: %{access_token: token, selected_chat: id}} = socket) when not is_nil(token) and not is_nil(id) do
-    with %Users{users: users} <- UsersAPI.fetch_chat_members(token, id) do
+    with {:ok, %Users{users: users}} <- UsersAPI.fetch_chat_members(token, id) do
       Enum.each(users, fn user ->
         Cache.put_username(user.id, user.name)
       end)
@@ -418,8 +418,9 @@ defmodule TextMessengerClientWeb.HomePage do
     else
       {:error, "token_expired"} ->
         {:redirect, socket |> redirect(to: "/login")}
-      _ ->
+      error ->
         IO.inspect("Unexpected error when fetching users")
+        IO.inspect(error)
         {:error, socket}
     end
   end

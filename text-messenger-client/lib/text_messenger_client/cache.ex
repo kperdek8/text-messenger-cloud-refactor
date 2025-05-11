@@ -2,7 +2,7 @@ defmodule TextMessengerClient.Cache do
   use GenServer
 
   alias TextMessengerClient.UsersAPI
-  alias TextMessengerClient.Protobuf.User
+  alias TextMessenger.Protobuf.User
 
   @username_cache_table :username_cache
 
