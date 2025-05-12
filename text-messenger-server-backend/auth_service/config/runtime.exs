@@ -31,6 +31,7 @@ if System.get_env("AUTH_PROVIDER") == "mock" do
   config :auth_service, :cognito, url: "http://localhost:4444/"
   config :auth_service, :sqs, host: "localhost:9324"
   config :auth_service, :sqs, url: "http://localhost:9324/"
+  config :auth_service, :sqs, queue_url: "http://localhost:9324/queues/user_events"
 else
   region = System.fetch_env!("AWS_REGION")
   config :auth_service, :aws, access_key: System.fetch_env!("AWS_ACCESS_KEY_ID")
@@ -43,6 +44,7 @@ else
   config :auth_service, :cognito, url: "https://cognito-idp.#{region}.amazonaws.com/"
   config :auth_service, :sqs, host: "sqs.#{region}.amazonaws.com"
   config :auth_service, :sqs, url: "https://sqs.#{region}.amazonaws.com/"
+  config :auth_service, :sqs, queue_url: System.fetch_env!("AWS_SQS_QUEUE_URL")
 end
 
 if config_env() == :prod do

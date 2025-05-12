@@ -1,11 +1,24 @@
 defmodule TextMessengerBackend.AuthServiceWeb.UserAuthController do
   use TextMessengerBackend.AuthServiceWeb, :controller
   alias TextMessengerBackend.AuthService.AWS.Cognito, as: Cognito
+  alias TextMessengerBackend.AuthService.SqsClient, as: SqsClient
+  alias TextMessengerBackend.AuthService.Events
+
+  defmodule RegistrationMessage do
+    @derive Jason.Encoder
+    defstruct [:event, :user_id, :username]
+  end
 
   def register(conn, %{"username" => username, "password" => password}) do
-    with {:ok, %{"UserSub" => _id}} <- Cognito.register(username, password, "development@test.com")
-         #{:ok, _user} <- Accounts.register_user(%{id: id,username: username})  <-- Replace with publishing event
+    with {:ok, %{"UserSub" => id}} <- Cognito.register(username, password, "development@test.com")
       do
+        queue_url = Application.get_env(:auth_service, :sqs)[:queue_url]
+        message = Events.UserCreated.new(%{
+          id: id,
+          username: username,
+          email: "development@test.com",
+        })
+        SqsClient.send_message(queue_url, message) # TODO: Add fallback mechanism
         conn
         |> put_status(:created)
         |> put_resp_content_type("application/json")
@@ -27,7 +40,6 @@ defmodule TextMessengerBackend.AuthServiceWeb.UserAuthController do
           error: "registration_failed",
           details: "Password does not match requirements!"
         })
-      # Maybe Ecto error
       {:error, _} ->
         conn
         |> put_status(:unprocessable_entity)
