@@ -37,3 +37,9 @@ npm-debug.log
 
 # Ignore RSA keys
 *.pem
+
+# Ignore env files
+*.env
+
+# Ignore java executables
+*.jar

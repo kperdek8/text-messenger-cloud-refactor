@@ -20,6 +20,31 @@ if System.get_env("PHX_SERVER") do
   config :auth_service, TextMessengerBackend.AuthServiceWeb.Endpoint, server: true
 end
 
+if System.get_env("AUTH_PROVIDER") == "mock" do
+  config :auth_service, :aws, access_key: "mock_access_key"
+  config :auth_service, :aws, secret_key: "mock_secret_key"
+  config :auth_service, :aws, region: "mock-region-1"
+  config :auth_service, :aws, session_token: nil
+  config :auth_service, :cognito, user_pool_id: "mock-pool"
+  config :auth_service, :cognito, client_id: "mock-client"
+  config :auth_service, :cognito, host: "localhost:4444"
+  config :auth_service, :cognito, url: "http://localhost:4444/"
+  config :auth_service, :sqs, host: "localhost:9324"
+  config :auth_service, :sqs, url: "http://localhost:9324/"
+else
+  region = System.fetch_env!("AWS_REGION")
+  config :auth_service, :aws, access_key: System.fetch_env!("AWS_ACCESS_KEY_ID")
+  config :auth_service, :aws, secret_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+  config :auth_service, :aws, session_token: System.get_env("AWS_SESSION_TOKEN")
+  config :auth_service, :aws, region: region
+  config :auth_service, :cognito, user_pool_id:  System.fetch_env!("AWS_USER_POOL_ID")
+  config :auth_service, :cognito, client_id:  System.fetch_env!("AWS_COGNITO_CLIENT_ID")
+  config :auth_service, :cognito, host: "cognito-idp.#{region}.amazonaws.com"
+  config :auth_service, :cognito, url: "https://cognito-idp.#{region}.amazonaws.com/"
+  config :auth_service, :sqs, host: "sqs.#{region}.amazonaws.com"
+  config :auth_service, :sqs, url: "https://sqs.#{region}.amazonaws.com/"
+end
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

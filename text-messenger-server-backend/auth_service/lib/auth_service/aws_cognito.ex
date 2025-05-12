@@ -55,31 +55,20 @@ defmodule TextMessengerBackend.AuthService.AWS.Cognito do
         {:reply, {:ok, %{access_token: access_token, id_token: id_token, refresh_token: refresh_token}}, state}
       {:error, "NotAuthorizedException"} ->
         {:reply, {:error, :unauthorized}, state}
-      {:error, error} ->
+      {:error, _error} ->
         {:reply, {:error, :unknown_error}, state}
     end
   end
 
   defp load_config() do
-    if System.get_env("AUTH_PROVIDER") == "mock" do
-      %{
-        access_key: "mock_access_key",
-        secret_key: "mock_secret_key",
-        session_token: nil,
-        region: "mock-region-1",
-        user_pool_id: "mock-pool",
-        client_id: "mock-client"
-      }
-    else
-      %{
-        access_key: System.fetch_env!("AWS_ACCESS_KEY_ID"),
-        secret_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY"),
-        session_token: System.get_env("AWS_SESSION_TOKEN"),
-        region: System.fetch_env!("AWS_REGION"),
-        user_pool_id: System.fetch_env!("AWS_USER_POOL_ID"),
-        client_id: System.fetch_env!("AWS_COGNITO_CLIENT_ID")
-      }
-    end
+    %{
+      access_key: Application.get_env(:auth_service, :aws)[:access_key],
+      secret_key: Application.get_env(:auth_service, :aws)[:secret_key],
+      session_token: Application.get_env(:auth_service, :aws)[:session_token],
+      region: Application.get_env(:auth_service, :aws)[:region],
+      user_pool_id: Application.get_env(:auth_service, :cognito)[:user_pool_id],
+      client_id: Application.get_env(:auth_service, :cognito)[:client_id]
+    }
   end
 
   defp create_user(credentials, user_pool_id, client_id, session_token, username, password, email) do
@@ -120,11 +109,7 @@ defmodule TextMessengerBackend.AuthService.AWS.Cognito do
     # Convert payload to JSON
     request_body = Jason.encode!(payload)
 
-    host =
-      case System.get_env("AUTH_PROVIDER", "aws") do
-        "mock" -> "localhost:4444"
-        _ -> "cognito-idp.#{credentials.region}.amazonaws.com"
-      end
+    host = Application.get_env(:auth_service, :cognito)[:host]
 
     # Define headers
     headers = %{
@@ -140,11 +125,7 @@ defmodule TextMessengerBackend.AuthService.AWS.Cognito do
       headers
     end
 
-    url =
-      case System.get_env("AUTH_PROVIDER", "aws") do
-        "mock" -> "http://#{host}/"
-        _ -> "https://#{host}/"
-      end
+    url = Application.get_env(:auth_service, :cognito)[:url]
 
     # Create a signed request
     signed_request = SignatureV4.sign_request(
