@@ -17,7 +17,8 @@ defmodule TextMessengerBackend.UserService.Application do
       # Start a worker by calling: TextMessengerBackend.UserService.Worker.start_link(arg)
       # {TextMessengerBackend.UserService.Worker, arg},
       # Start to serve requests, typically the last entry
-      TextMessengerBackend.UserServiceWeb.Endpoint
+      TextMessengerBackend.UserServiceWeb.Endpoint,
+      TextMessengerBackend.UserServiceWeb.SqsConsumer
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

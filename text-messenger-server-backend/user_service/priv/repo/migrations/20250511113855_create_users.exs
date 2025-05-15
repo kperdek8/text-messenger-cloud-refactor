@@ -5,6 +5,7 @@ defmodule TextMessengerBackend.UserService.Repo.Migrations.CreateUsers do
     create table(:users, primary_key: false) do
       add(:id, :string, primary_key: true)
       add(:username, :string, null: false)
+      add(:email, :string, null: false)
 
       timestamps()
     end

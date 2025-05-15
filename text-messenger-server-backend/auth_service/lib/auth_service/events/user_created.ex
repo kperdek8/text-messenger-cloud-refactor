@@ -17,7 +17,6 @@ defmodule TextMessengerBackend.AuthService.Events.UserCreated do
             id: String.t(),
             username: String.t(),
             email: String.t(),
-            cognito_sub: String.t()
           }
         }
 
@@ -28,7 +27,7 @@ defmodule TextMessengerBackend.AuthService.Events.UserCreated do
     %__MODULE__{
       timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
       event: "user.created",
-      data: Map.take(user_attrs, [:id, :username, :email, :cognito_sub])
+      data: Map.take(user_attrs, [:id, :username, :email])
     }
   end
 end

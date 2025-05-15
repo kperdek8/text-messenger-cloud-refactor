@@ -20,7 +20,7 @@ if System.get_env("PHX_SERVER") do
   config :auth_service, TextMessengerBackend.AuthServiceWeb.Endpoint, server: true
 end
 
-if System.get_env("AUTH_PROVIDER") == "mock" do
+if System.get_env("AUTH_PROVIDER") == "mock" or config_env() == :dev do
   config :auth_service, :aws, access_key: "mock_access_key"
   config :auth_service, :aws, secret_key: "mock_secret_key"
   config :auth_service, :aws, region: "mock-region-1"

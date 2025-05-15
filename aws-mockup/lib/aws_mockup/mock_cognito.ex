@@ -69,7 +69,7 @@
            %{"AuthFlow" => "USER_PASSWORD_AUTH", "AuthParameters" => %{"USERNAME" => username, "PASSWORD" => password}} <- params,
            {:ok, ^password} <- AwsMockup.UsersCache.get_password(username),
            {:ok, user_sub} <- AwsMockup.UsersCache.get_user_sub(username) do
-        tokens = generate_tokens(user_sub)
+        tokens = generate_tokens(user_sub, username)
         send_resp(conn, 200, Jason.encode!(%{"AuthenticationResult" => tokens}))
       else
         {:error, %Jason.DecodeError{}} ->
@@ -80,19 +80,19 @@
     end
 
 
-    defp generate_tokens(username) do
+    defp generate_tokens(user_sub, username) do
       now = :os.system_time(:seconds)
       one_hour = 3600
       thirty_days = 30 * 24 * 3600
 
       common_claims = %{
-        "sub" => username,
+        "sub" => user_sub,
         "iss" => "http://localhost:4444",
         "client_id" => "mock-client-id",
         "iat" => now
       }
 
-      id_token_claims = Map.merge(common_claims, %{"exp" => now + thirty_days, "token_use" => "id"})
+      id_token_claims = Map.merge(common_claims, %{"exp" => now + thirty_days, "token_use" => "id", "nickname" => username})
       access_token_claims = Map.merge(common_claims, %{"exp" => now + thirty_days, "token_use" => "access"})
 
       id_token = sign_jwt(id_token_claims)

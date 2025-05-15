@@ -5,6 +5,7 @@ defmodule TextMessengerBackend.UserService.Accounts.User do
   @primary_key {:id, :string, autogenerate: false}
   schema "users" do
     field(:username, :string)
+    field(:email, :string)
 
     timestamps()
   end
@@ -14,9 +15,9 @@ defmodule TextMessengerBackend.UserService.Accounts.User do
   """
   def registration_changeset(user, attrs) do
     user
-    |> cast(attrs, [:id, :username])
+    |> cast(attrs, [:id, :username, :email])
     |> unique_constraint([:id, :username])
-    |> validate_required([:username])
+    |> validate_required([:username, :email])
   end
 
   @doc """

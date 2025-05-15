@@ -47,7 +47,8 @@ defmodule TextMessengerBackend.UserService.MixProject do
       {:bandit, "~> 1.5"},
       {:protobuf, "~> 0.13.0"},
       {:joken, "~> 2.6"},
-      {:httpoison, "~> 2.2"}
+      {:httpoison, "~> 2.2"},
+      {:broadway_sqs, "~> 0.7"}
     ]
   end
 

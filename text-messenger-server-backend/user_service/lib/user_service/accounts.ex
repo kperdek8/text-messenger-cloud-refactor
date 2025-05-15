@@ -12,7 +12,7 @@ defmodule TextMessengerBackend.UserService.Accounts do
     IO.inspect(attrs)
     %User{}
     |> User.registration_changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   @doc """

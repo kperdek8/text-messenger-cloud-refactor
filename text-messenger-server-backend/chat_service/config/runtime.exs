@@ -20,7 +20,7 @@ if System.get_env("PHX_SERVER") do
   config :chat_service, TextMessengerBackend.ChatServiceWeb.Endpoint, server: true
 end
 
-if System.get_env("AUTH_PROVIDER") == "mock" do
+if System.get_env("AUTH_PROVIDER") == "mock" or config_env() == :dev do
   config :chat_service, :cognito, issuer: "http://localhost:4444"
   config :chat_service, :cognito, jwks_url: "http://localhost:4444/.well-known/jwks.json"
   config :chat_service, :aws, client_id: "mock-client-id"

@@ -20,18 +20,31 @@ if System.get_env("PHX_SERVER") do
   config :user_service, TextMessengerBackend.UserServiceWeb.Endpoint, server: true
 end
 
-if System.get_env("AUTH_PROVIDER") == "mock" do
+if System.get_env("AUTH_PROVIDER") == "mock" or config_env() == :dev do
+  config :user_service, :aws, access_key: "mock_access_key"
+  config :user_service, :aws, secret_key: "mock_secret_key"
+  config :user_service, :aws, region: "mock-region-1"
   config :user_service, :cognito, issuer: "http://localhost:4444"
   config :user_service, :cognito, jwks_url: "http://localhost:4444/.well-known/jwks.json"
   config :user_service, :aws, client_id: "mock-client-id"
+  config :user_service, :sqs, queue_url: "http://localhost:9324/queues/user_events"
+  config :ex_aws, :sqs,
+    scheme: "http://",
+    host: "localhost",
+    port: 9324,
+    region: "elasticmq"
 else
-  region = System.get_env("AWS_REGION")
-  pool_id = System.get_env("AWS_USER_POOL_ID")
+  region = System.fetch_env!("AWS_REGION")
+  pool_id = System.fetch_env!("AWS_USER_POOL_ID")
 
+  config :user_service, :aws, access_key: System.fetch_env!("AWS_ACCESS_KEY_ID")
+  config :user_service, :aws, secret_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+  config :user_service, :aws, region: region
   config :user_service, :cognito, issuer: "https://cognito-idp.#{region}.amazonaws.com/#{pool_id}"
   config :user_service, :cognito, jwks_url: "https://cognito-idp.#{region}.amazonaws.com/#{pool_id}/.well-known/jwks.json"
-  config :user_service, :aws, client_id: System.get_env("AWS_COGNITO_CLIENT_ID")
+  config :user_service, :aws, client_id: System.fetch_env!("AWS_COGNITO_CLIENT_ID")
   config :user_service, :aws, region: region
+  config :auth_service, :sqs, queue_url: System.fetch_env!("AWS_SQS_QUEUE_URL")
 end
 
 if config_env() == :prod do
