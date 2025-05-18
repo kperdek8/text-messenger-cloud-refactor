@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="joken_jwks" type="mix">
-    <CLASSES />
-    <JAVADOC />
-    <SOURCES>
-      <root url="file://$PROJECT_DIR$/deps/joken_jwks/lib" />
-    </SOURCES>
-  </library>
-</component>

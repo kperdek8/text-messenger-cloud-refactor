@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="httpoison" type="mix">
-    <CLASSES />
-    <JAVADOC />
-    <SOURCES>
-      <root url="file://$PROJECT_DIR$/deps/httpoison/lib" />
-    </SOURCES>
-  </library>
-</component>

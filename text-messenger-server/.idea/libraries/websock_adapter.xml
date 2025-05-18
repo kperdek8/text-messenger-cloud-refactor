@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="websock_adapter" type="mix">
-    <CLASSES />
-    <JAVADOC />
-    <SOURCES>
-      <root url="file://$PROJECT_DIR$/deps/websock_adapter/lib" />
-    </SOURCES>
-  </library>
-</component>

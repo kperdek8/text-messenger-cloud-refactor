@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="tesla" type="mix">
-    <CLASSES />
-    <JAVADOC />
-    <SOURCES>
-      <root url="file://$PROJECT_DIR$/deps/tesla/lib" />
-    </SOURCES>
-  </library>
-</component>
