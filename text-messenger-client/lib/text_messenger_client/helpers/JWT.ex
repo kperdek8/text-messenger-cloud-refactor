@@ -10,7 +10,7 @@ defmodule TextMessengerClient.Helpers.JWT do
               {:error, reason} -> {:error, "Failed to parse payload JSON: #{reason}"}
             end
 
-          {:error, _reason} ->
+          :error ->
             {:error, "Failed to decode payload from base64"}
         end
       _ ->

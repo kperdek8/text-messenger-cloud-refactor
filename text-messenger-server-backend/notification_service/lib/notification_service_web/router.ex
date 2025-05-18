@@ -5,6 +5,10 @@ defmodule TextMessengerBackend.NotificationServiceWeb.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/", TextMessengerBackend.NotificationServiceWeb do
+    get "/health", HealthController, :index
+  end
+
   scope "/api", TextMessengerBackend.NotificationServiceWeb do
     pipe_through :api
   end

@@ -9,7 +9,6 @@ import Config
 
 config :notification_service,
   namespace: TextMessengerBackend.NotificationService,
-  ecto_repos: [TextMessengerBackend.NotificationService.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint

@@ -1,9 +1,1 @@
-1. Utworzyć serwis czatu
-2. Utworzyć serwis użytkowników
-3. Dostosować migracje do nowych baz danych
-4. Zainstalować ElasticMQ
-5. Skonfigurować Broadway do odczytywania eventów
-6. Napisać moduł AWS API do publikowania eventów AWS SQS
-7. Skopiować mockup Cognito z laptopa
-8. Przetestować rejestracje i logowanie
-9. Napisać moduł od powiadomień E-Mail
+7. Napisać moduł od powiadomień E-Mail

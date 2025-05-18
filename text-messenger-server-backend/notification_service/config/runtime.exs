@@ -20,6 +20,58 @@ if System.get_env("PHX_SERVER") do
   config :notification_service, TextMessengerBackend.NotificationServiceWeb.Endpoint, server: true
 end
 
+runtime_env = System.get_env("RUNTIME_ENV") || Atom.to_string(config_env())
+runtime_env = String.to_atom(runtime_env)
+
+case runtime_env do
+  :dev ->
+    config :notification_service, :aws, access_key: "mock_access_key"
+    config :notification_service, :aws, secret_key: "mock_secret_key"
+    config :notification_service, :aws, region: "mock-region-1"
+    config :notification_service, :aws, token: nil
+    config :notification_service, :aws, client_id: "mock-client-id"
+    config :notification_service, :sqs, queue_url: "http://localhost:9324/queues/user_events"
+    config :ex_aws, :sqs,
+      scheme: "http://",
+      host: "localhost",
+      port: 9324,
+      region: "elasticmq"
+    # Mock SNS currently not supported
+    config :ex_aws,
+      access_key_id: "mock_access_key",
+      secret_access_key: "mock_secret_key",
+      region: "mock-region-1"
+  :docker ->
+    sqs_host = System.get_env("SQS_HOST") || "host.docker.internal"
+    config :notification_service, :aws, access_key: "mock_access_key"
+    config :notification_service, :aws, secret_key: "mock_secret_key"
+    config :notification_service, :aws, region: "mock-region-1"
+    config :notification_service, :aws, token: nil
+    config :notification_service, :sqs, queue_url: "http://#{sqs_host}:9324/queues/user_events"
+    config :ex_aws, :sqs,
+      scheme: "http://",
+      host: sqs_host,
+      port: 9324,
+      region: "elasticmq"
+    # Mock SNS currently not supported
+  :prod ->
+    region = System.get_env("AWS_REGION")
+
+    config :notification_service, :aws, access_key: System.fetch_env!("AWS_ACCESS_KEY_ID")
+    config :notification_service, :aws, secret_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+	  config :notification_service, :aws, token: System.fetch_env!("AWS_SESSION_TOKEN")
+    config :notification_service, :aws, region: region
+    config :notification_service, :sns, email_topic_arn: System.fetch_env!("SNS_EMAIL_TOPIC_ARN")
+    config :notification_service, :dynamodb, table_name: System.fetch_env!("NOTIFICATION_LOG_TABLE")
+    config :notification_service, :sqs, queue_url: System.fetch_env!("AWS_SQS_QUEUE_URL")
+    config :ex_aws,
+    #  http_client: ExAws.Request.Finch,
+      region: region,
+      access_key_id: System.fetch_env!("AWS_ACCESS_KEY_ID"),
+      secret_access_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY"),
+      security_token: System.fetch_env!("AWS_SESSION_TOKEN")
+end
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
@@ -33,8 +85,8 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
-  port = String.to_integer(System.get_env("PORT") || "4000")
+  host = System.get_env("PHX_HOST") || "0.0.0.0"
+  port = String.to_integer(System.get_env("PORT") || "4004")
 
   config :notification_service, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -45,7 +97,7 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: {0, 0, 0, 0},
       port: port
     ],
     secret_key_base: secret_key_base

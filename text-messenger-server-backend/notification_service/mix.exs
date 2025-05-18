@@ -33,8 +33,6 @@ defmodule TextMessengerBackend.NotificationService.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.7.14"},
-      {:phoenix_ecto, "~> 4.5"},
-      {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
       {:swoosh, "~> 1.5"},
       {:finch, "~> 0.13"},
@@ -43,7 +41,16 @@ defmodule TextMessengerBackend.NotificationService.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:ex_aws, "~> 2.0"},
+      {:ex_aws_sqs, "~> 3.3"},
+      {:ex_aws_sns, "~> 2.0"},
+      {:ex_aws_dynamo, "~> 4.0"},
+      {:poison, "~> 3.0"},
+      {:hackney, "~> 1.9"},
+      {:sweet_xml, "~> 0.7"},
+      {:uuid, "~> 1.1"},
+      {:broadway_sqs, "~> 0.7"}
     ]
   end
 
@@ -54,11 +61,6 @@ defmodule TextMessengerBackend.NotificationService.MixProject do
   #
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
-    [
-      setup: ["deps.get", "ecto.setup"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
-    ]
+    []
   end
 end

@@ -3,6 +3,8 @@ defmodule TextMessengerBackend.ChatServiceWeb.ChatChannel do
 
   alias TextMessengerBackend.ChatService.Chats
   alias TextMessengerBackend.ChatService.Chats.ChatMessage
+  alias TextMessengerBackend.ChatService.SqsClient, as: SqsClient
+  alias TextMessengerBackend.ChatService.Events
 
   require Logger
 
@@ -49,6 +51,14 @@ defmodule TextMessengerBackend.ChatServiceWeb.ChatChannel do
       {:ok, _chatuser} ->
         TextMessengerBackend.ChatServiceWeb.Endpoint.broadcast("notifications:#{user_id}", "added_to_chat", %{chat_id: socket.assigns.chat_id})
         broadcast_from!(socket, "add_user", %{user_id: user_id})
+
+        queue_url = Application.get_env(:chat_service, :sqs)[:queue_url]
+        message = Events.UserAdded.new(%{
+          id: user_id,
+          chat_id: socket.assigns.chat_id
+        })
+        Logger.info("Producing new message #{inspect(message)}, sending to #{queue_url}")
+        SqsClient.send_message(queue_url, message)
 
         {:noreply, socket}
 

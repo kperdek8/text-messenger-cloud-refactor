@@ -20,18 +20,48 @@ if System.get_env("PHX_SERVER") do
   config :chat_service, TextMessengerBackend.ChatServiceWeb.Endpoint, server: true
 end
 
-if System.get_env("AUTH_PROVIDER") == "mock" or config_env() == :dev do
-  config :chat_service, :cognito, issuer: "http://localhost:4444"
-  config :chat_service, :cognito, jwks_url: "http://localhost:4444/.well-known/jwks.json"
-  config :chat_service, :aws, client_id: "mock-client-id"
-else
-  region = System.get_env("AWS_REGION")
-  pool_id = System.get_env("AWS_USER_POOL_ID")
+runtime_env = System.get_env("RUNTIME_ENV") || Atom.to_string(config_env())
+runtime_env = String.to_atom(runtime_env)
 
-  config :chat_service, :cognito, issuer: "https://cognito-idp.#{region}.amazonaws.com/#{pool_id}"
-  config :chat_service, :cognito, jwks_url: "https://cognito-idp.#{region}.amazonaws.com/#{pool_id}/.well-known/jwks.json"
-  config :chat_service, :aws, client_id: System.get_env("AWS_COGNITO_CLIENT_ID")
-  config :chat_service, :aws, region: region
+case runtime_env do
+  :dev ->
+    config :chat_service, :aws, access_key: "mock_access_key"
+    config :chat_service, :aws, secret_key: "mock_secret_key"
+    config :chat_service, :aws, region: "mock-region-1"
+    config :chat_service, :aws, session_token: nil
+    config :chat_service, :cognito, issuer: "http://localhost:4444"
+    config :chat_service, :cognito, jwks_url: "http://localhost:4444/.well-known/jwks.json"
+    config :chat_service, :aws, client_id: "mock-client-id"
+    config :chat_service, :sqs, host: "localhost:9324"
+    config :chat_service, :sqs, url: "http://localhost:9324/"
+    config :chat_service, :sqs, queue_url: "http://localhost:9324/queues/user_added_queue"
+  :docker ->
+    cognito_host = System.get_env("COGNITO_HOST") || "host.docker.internal:4444"
+    sqs_host = System.get_env("SQS_HOST") || "host.docker.internal"
+    config :chat_service, :aws, access_key: "mock_access_key"
+    config :chat_service, :aws, secret_key: "mock_secret_key"
+    config :chat_service, :aws, region: "mock-region-1"
+    config :chat_service, :aws, session_token: nil
+    config :chat_service, :cognito, issuer: "http://localhost:4444"
+    config :chat_service, :cognito, jwks_url: "http://#{cognito_host}:4444/.well-known/jwks.json"
+    config :chat_service, :aws, client_id: "mock-client-id"
+    config :chat_service, :sqs, host: sqs_host
+    config :chat_service, :sqs, url: "http://#{sqs_host}:9324/"
+    config :chat_service, :sqs, queue_url: "http://#{sqs_host}:9324/queues/user_added_queue"
+  :prod ->
+    region = System.get_env("AWS_REGION")
+    pool_id = System.get_env("AWS_USER_POOL_ID")
+    config :chat_service, :aws, access_key: System.fetch_env!("AWS_ACCESS_KEY_ID")
+    config :chat_service, :aws, secret_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+    config :chat_service, :aws, session_token: System.get_env("AWS_SESSION_TOKEN")
+    config :chat_service, :aws, region: region
+    config :chat_service, :cognito, issuer: "https://cognito-idp.#{region}.amazonaws.com/#{pool_id}"
+    config :chat_service, :cognito, jwks_url: "https://cognito-idp.#{region}.amazonaws.com/#{pool_id}/.well-known/jwks.json"
+    config :chat_service, :aws, client_id: System.get_env("AWS_COGNITO_CLIENT_ID")
+    config :chat_service, :aws, region: region
+    config :chat_service, :sqs, host: "sqs.#{region}.amazonaws.com"
+    config :chat_service, :sqs, url: "https://sqs.#{region}.amazonaws.com/"
+    config :chat_service, :sqs, queue_url: System.fetch_env!("AWS_SQS_QUEUE_URL")
 end
 
 if config_env() == :prod do
@@ -47,8 +77,8 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
-  port = String.to_integer(System.get_env("PORT") || "4000")
+  host = System.get_env("PHX_HOST") || "0.0.0.0"
+  port = String.to_integer(System.get_env("PORT") || "4002")
 
   config :chat_service, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -59,10 +89,28 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: {0, 0, 0, 0},
       port: port
     ],
     secret_key_base: secret_key_base
+
+  database_url =
+	System.get_env("DATABASE_URL") ||
+	  raise """
+	  environment variable DATABASE_URL is missing.
+	  For example: ecto://USER:PASS@HOST/DATABASE
+	  """
+
+  maybe_ipv6 = if System.get_env("ECTO_IPV6"), do: [:inet6], else: []
+
+  config :chat_service, TextMessengerBackend.ChatService.Repo,
+    ssl: true,
+    ssl_opts: [
+      verify: :verify_none
+    ],
+    url: database_url,
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    socket_options: maybe_ipv6
 
   # ## SSL Support
   #

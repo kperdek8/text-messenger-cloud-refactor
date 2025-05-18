@@ -4,21 +4,14 @@ defmodule TextMessengerServerWeb.Auth.Cognito do
 
   @behaviour Plug
 
-  @region System.get_env("AWS_REGION")
-  @user_pool_id System.get_env("AWS_USER_POOL_ID")
-  @client_id System.get_env("AWS_COGNITO_CLIENT_ID")
-
-  @jwks_url "https://cognito-idp.#{@region}.amazonaws.com/#{@user_pool_id}/.well-known/jwks.json"
-  @issuer "https://cognito-idp.#{@region}.amazonaws.com/#{@user_pool_id}"
-
   @impl true
   def init(opts), do: opts
 
   @impl true
   def call(conn, _opts) do
     with {:ok, token} <- get_token(conn),
-         {:ok, user} <- verify_and_get_user(token) do
-      assign(conn, :user, user)
+         {:ok, user_id} <- verify_and_get_user(token) do
+      assign(conn, :user_id, user_id)
     else
       _ -> send_resp(conn, 401, "Unauthorized") |> halt()
     end
@@ -26,9 +19,8 @@ defmodule TextMessengerServerWeb.Auth.Cognito do
 
   def verify_and_get_user(token) do
     with {:ok, claims} <- verify_token(token),
-         cognito_sub <- claims["sub"],
-         {:ok, user} <- get_user(cognito_sub) do
-      {:ok, user}
+         cognito_sub <- claims["sub"] do
+      {:ok, cognito_sub}
     else
       {:error, reason} -> {:error, reason}
       nil -> {:error, :invalid_token}
@@ -51,8 +43,8 @@ defmodule TextMessengerServerWeb.Auth.Cognito do
 
       token_config =
         Joken.Config.default_claims()
-        |> Joken.Config.add_claim("iss", fn -> @issuer end, &(&1 == @issuer))
-        |> Joken.Config.add_claim("client_id", fn -> @client_id end, &(&1 == @client_id || Enum.member?(&1, @client_id)))
+        |> Joken.Config.add_claim("iss", fn -> issuer() end, &(&1 == issuer()))
+        |> Joken.Config.add_claim("client_id", fn -> client_id() end, &(&1 == client_id() || Enum.member?(&1, client_id())))
         |> Joken.Config.add_claim("token_use", fn -> "id" end, &(&1 == "id" || &1 == "access"))
 
       Joken.verify_and_validate(token_config, token, signer)
@@ -69,8 +61,8 @@ defmodule TextMessengerServerWeb.Auth.Cognito do
     end
   end
 
-  defp fetch_jwks do
-    case HTTPoison.get(@jwks_url) do
+  defp fetch_jwks() do
+    case HTTPoison.get(jwks_url()) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, Jason.decode!(body)}
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
@@ -80,10 +72,7 @@ defmodule TextMessengerServerWeb.Auth.Cognito do
     end
   end
 
-  defp get_user(cognito_sub) do
-    case TextMessengerServer.Accounts.get_user(cognito_sub) do
-      nil -> {:error, :user_not_found}
-      user -> user
-    end
-  end
+  defp issuer, do: Application.get_env(:user_service, :cognito)[:issuer]
+  defp client_id, do: Application.get_env(:user_service, :aws)[:client_id]
+  defp jwks_url, do: Application.get_env(:user_service, :cognito)[:jwks_url]
 end

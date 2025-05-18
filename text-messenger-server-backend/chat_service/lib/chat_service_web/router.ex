@@ -9,6 +9,10 @@ defmodule TextMessengerBackend.ChatServiceWeb.Router do
     plug TextMessengerBackend.ChatServiceWeb.Auth.Cognito
   end
 
+  scope "/", TextMessengerBackend.ChatServiceWeb do
+    get "/health", HealthController, :index
+  end
+
   scope "/api/", TextMessengerBackend.ChatServiceWeb do
     pipe_through :api
   end

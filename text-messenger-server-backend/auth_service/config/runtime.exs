@@ -20,31 +20,49 @@ if System.get_env("PHX_SERVER") do
   config :auth_service, TextMessengerBackend.AuthServiceWeb.Endpoint, server: true
 end
 
-if System.get_env("AUTH_PROVIDER") == "mock" or config_env() == :dev do
-  config :auth_service, :aws, access_key: "mock_access_key"
-  config :auth_service, :aws, secret_key: "mock_secret_key"
-  config :auth_service, :aws, region: "mock-region-1"
-  config :auth_service, :aws, session_token: nil
-  config :auth_service, :cognito, user_pool_id: "mock-pool"
-  config :auth_service, :cognito, client_id: "mock-client"
-  config :auth_service, :cognito, host: "localhost:4444"
-  config :auth_service, :cognito, url: "http://localhost:4444/"
-  config :auth_service, :sqs, host: "localhost:9324"
-  config :auth_service, :sqs, url: "http://localhost:9324/"
-  config :auth_service, :sqs, queue_url: "http://localhost:9324/queues/user_events"
-else
-  region = System.fetch_env!("AWS_REGION")
-  config :auth_service, :aws, access_key: System.fetch_env!("AWS_ACCESS_KEY_ID")
-  config :auth_service, :aws, secret_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY")
-  config :auth_service, :aws, session_token: System.get_env("AWS_SESSION_TOKEN")
-  config :auth_service, :aws, region: region
-  config :auth_service, :cognito, user_pool_id:  System.fetch_env!("AWS_USER_POOL_ID")
-  config :auth_service, :cognito, client_id:  System.fetch_env!("AWS_COGNITO_CLIENT_ID")
-  config :auth_service, :cognito, host: "cognito-idp.#{region}.amazonaws.com"
-  config :auth_service, :cognito, url: "https://cognito-idp.#{region}.amazonaws.com/"
-  config :auth_service, :sqs, host: "sqs.#{region}.amazonaws.com"
-  config :auth_service, :sqs, url: "https://sqs.#{region}.amazonaws.com/"
-  config :auth_service, :sqs, queue_url: System.fetch_env!("AWS_SQS_QUEUE_URL")
+runtime_env = System.get_env("RUNTIME_ENV") || Atom.to_string(config_env())
+runtime_env = String.to_atom(runtime_env)
+
+case runtime_env do
+  :dev ->
+    config :auth_service, :aws, access_key: "mock_access_key"
+    config :auth_service, :aws, secret_key: "mock_secret_key"
+    config :auth_service, :aws, region: "mock-region-1"
+    config :auth_service, :aws, session_token: nil
+    config :auth_service, :cognito, user_pool_id: "mock-pool"
+    config :auth_service, :cognito, client_id: "mock-client"
+    config :auth_service, :cognito, host: "localhost:4444"
+    config :auth_service, :cognito, url: "http://localhost:4444/"
+    config :auth_service, :sqs, host: "localhost:9324"
+    config :auth_service, :sqs, url: "http://localhost:9324/"
+    config :auth_service, :sqs, queue_url: "http://localhost:9324/queues/user_events"
+  :docker ->
+    cognito_host = System.get_env("COGNITO_HOST") || "host.docker.internal:4444"
+    sqs_host = System.get_env("SQS_HOST") || "host.docker.internal"
+    config :auth_service, :aws, access_key: "mock_access_key"
+    config :auth_service, :aws, secret_key: "mock_secret_key"
+    config :auth_service, :aws, region: "mock-region-1"
+    config :auth_service, :aws, session_token: nil
+    config :auth_service, :cognito, user_pool_id: "mock-pool"
+    config :auth_service, :cognito, client_id: "mock-client"
+    config :auth_service, :cognito, host: cognito_host
+    config :auth_service, :cognito, url: "http://#{cognito_host}:4444/"
+    config :auth_service, :sqs, host: sqs_host
+    config :auth_service, :sqs, url: "http://#{sqs_host}:9324/"
+    config :auth_service, :sqs, queue_url: "http://#{sqs_host}:9324/queues/user_events"
+  :prod ->
+    region = System.fetch_env!("AWS_REGION")
+    config :auth_service, :aws, access_key: System.fetch_env!("AWS_ACCESS_KEY_ID")
+    config :auth_service, :aws, secret_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+    config :auth_service, :aws, session_token: System.get_env("AWS_SESSION_TOKEN")
+    config :auth_service, :aws, region: region
+    config :auth_service, :cognito, user_pool_id:  System.fetch_env!("AWS_USER_POOL_ID")
+    config :auth_service, :cognito, client_id:  System.fetch_env!("AWS_COGNITO_CLIENT_ID")
+    config :auth_service, :cognito, host: "cognito-idp.#{region}.amazonaws.com"
+    config :auth_service, :cognito, url: "https://cognito-idp.#{region}.amazonaws.com/"
+    config :auth_service, :sqs, host: "sqs.#{region}.amazonaws.com"
+    config :auth_service, :sqs, url: "https://sqs.#{region}.amazonaws.com/"
+    config :auth_service, :sqs, queue_url: System.fetch_env!("AWS_SQS_QUEUE_URL")
 end
 
 if config_env() == :prod do
@@ -60,7 +78,7 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  host = System.get_env("PHX_HOST") || "0.0.0.0"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :auth_service, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
@@ -72,10 +90,12 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: {0, 0, 0, 0},
       port: port
     ],
-    secret_key_base: secret_key_base
+    check_origin: false,
+    secret_key_base: secret_key_base,
+    server: true
 
   # ## SSL Support
   #

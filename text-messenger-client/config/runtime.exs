@@ -34,7 +34,7 @@ if config_env() == :prod do
       """
 
   host = System.get_env("PHX_HOST") || "0.0.0.0"
-  port = String.to_integer(System.get_env("PORT") || "4000")
+  port = String.to_integer(System.get_env("PORT") || "8888")
 
   config :text_messenger_client, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -45,11 +45,12 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: {0, 0, 0, 0},
       port: port
     ],
 	check_origin: false,
-    secret_key_base: secret_key_base
+    secret_key_base: secret_key_base,
+	server: true
 	
   config :text_messenger_client,
     api_url: System.get_env("API_URL") || "http://127.0.0.1:8080/api",

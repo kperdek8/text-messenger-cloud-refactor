@@ -17,7 +17,7 @@ defmodule TextMessengerClientWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import TextMessengerClientWeb.Gettext
+  use Gettext, backend: TextMessengerClientWeb.Gettext
 
   @doc """
   Renders a modal.

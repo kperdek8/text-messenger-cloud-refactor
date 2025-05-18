@@ -9,7 +9,6 @@ defmodule TextMessengerBackend.UserService.Accounts do
   Registers a new user with hashed password.
   """
   def register_user(attrs) do
-    IO.inspect(attrs)
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert(on_conflict: :nothing)

@@ -110,9 +110,4 @@ defmodule TextMessengerClientWeb.LoginPage do
     </div>
     """
   end
-
-  defp format_error(details) do
-    [{key, [message | _rest]}] = Enum.take(details, 1) # Get the first key-value pair
-    "#{key} #{message}"
-  end
 end

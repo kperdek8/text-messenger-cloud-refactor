@@ -20,6 +20,72 @@ if System.get_env("PHX_SERVER") do
   config :file_service, TextMessengerBackend.FileServiceWeb.Endpoint, server: true
 end
 
+runtime_env = System.get_env("RUNTIME_ENV") || Atom.to_string(config_env())
+runtime_env = String.to_atom(runtime_env)
+
+case runtime_env do
+  :dev ->
+    config :file_service, :aws, access_key: "mock_access_key"
+    config :file_service, :aws, secret_key: "mock_secret_key"
+    config :file_service, :aws, region: "mock-region-1"
+    config :file_service, :aws, token: nil
+    config :file_service, :cognito, issuer: "http://localhost:4444"
+    config :file_service, :cognito, jwks_url: "http://localhost:4444/.well-known/jwks.json"
+    config :file_service, :aws, client_id: "mock-client-id"
+    # Mock S3 currently not supported
+    config :ex_aws,
+      access_key_id: "mock_access_key",
+      secret_access_key: "mock_secret_key",
+      region: "mock-region-1",
+      s3: [
+        scheme: "http://",
+        host: "localhost",
+        region: "mock-region-1"
+      ]
+  :docker ->
+    cognito_host = System.get_env("COGNITO_HOST") || "host.docker.internal:4444"
+    config :file_service, :aws, access_key: "mock_access_key"
+    config :file_service, :aws, secret_key: "mock_secret_key"
+    config :file_service, :aws, region: "mock-region-1"
+    config :file_service, :aws, token: nil
+    config :file_service, :cognito, issuer: "http://localhost:4444"
+    config :file_service, :cognito, jwks_url: "http://#{cognito_host}:4444/.well-known/jwks.json"
+    config :file_service, :aws, client_id: "mock-client-id"
+    # Mock S3 currently not supported
+    config :ex_aws,
+      access_key_id: "mock_access_key",
+      secret_access_key: "mock_secret_key",
+      region: "mock-region-1",
+      s3: [
+        scheme: "http://",
+        host: "localhost",
+        region: "mock-region-1"
+      ]
+  :prod ->
+    region = System.get_env("AWS_REGION")
+    pool_id = System.get_env("AWS_USER_POOL_ID")
+
+    config :file_service, :aws, access_key: System.fetch_env!("AWS_ACCESS_KEY_ID")
+    config :file_service, :aws, secret_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+	  config :file_service, :aws, token: System.fetch_env!("AWS_SESSION_TOKEN")
+    config :file_service, :aws, region: region
+    config :file_service, :cognito, issuer: "https://cognito-idp.#{region}.amazonaws.com/#{pool_id}"
+    config :file_service, :cognito, jwks_url: "https://cognito-idp.#{region}.amazonaws.com/#{pool_id}/.well-known/jwks.json"
+    config :file_service, :aws, client_id: System.get_env("AWS_COGNITO_CLIENT_ID")
+    config :file_service, :s3, bucket: System.get_env("AWS_BUCKET")
+    config :ex_aws,
+      http_client: ExAws.Request.Finch,
+      region: region,
+      access_key_id: System.fetch_env!("AWS_ACCESS_KEY_ID"),
+      secret_access_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY"),
+      security_token: System.fetch_env!("AWS_SESSION_TOKEN"),
+      s3: [
+        scheme: "https://",
+        host: "s3.#{region}.amazonaws.com",
+        region: region
+      ]
+end
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
@@ -33,8 +99,8 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
-  port = String.to_integer(System.get_env("PORT") || "4000")
+  host = System.get_env("PHX_HOST") || "0.0.0.0"
+  port = String.to_integer(System.get_env("PORT") || "4003")
 
   config :file_service, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -45,7 +111,7 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: {0, 0, 0, 0},
       port: port
     ],
     secret_key_base: secret_key_base

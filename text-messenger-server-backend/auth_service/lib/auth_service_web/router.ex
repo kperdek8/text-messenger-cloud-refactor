@@ -5,6 +5,10 @@ defmodule TextMessengerBackend.AuthServiceWeb.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/", TextMessengerBackend.AuthServiceWeb do
+    get "/health", HealthController, :index
+  end
+
   scope "/api/", TextMessengerBackend.AuthServiceWeb do
     pipe_through :api
 

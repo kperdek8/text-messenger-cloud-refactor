@@ -1,21 +1,5 @@
 import Config
 
-database_url =
-	System.get_env("DATABASE_URL") ||
-	  raise """
-	  environment variable DATABASE_URL is missing.
-	  For example: ecto://USER:PASS@HOST/DATABASE
-	  """
-
-config :chat_service, TextMessengerBackend.ChatService.Repo,
-	ssl: true,
-	ssl_opts: [
-	  verify: :verify_none
-	],
-	url: database_url,
-	pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-	socket_options: maybe_ipv6
-
 # Configures Swoosh API Client
 config :swoosh,
   api_client: Swoosh.ApiClient.Finch,

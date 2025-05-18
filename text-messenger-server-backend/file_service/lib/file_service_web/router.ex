@@ -5,8 +5,14 @@ defmodule TextMessengerBackend.FileServiceWeb.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/", TextMessengerBackend.FileServiceWeb do
+    get "/health", HealthController, :index
+  end
+
   scope "/api", TextMessengerBackend.FileServiceWeb do
     pipe_through :api
+    get "/files/:chat_id/:message_id/:file", FileController, :show
+    post "/files", FileController, :upload
   end
 
   # Enable Swoosh mailbox preview in development

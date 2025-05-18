@@ -22,7 +22,7 @@ defmodule TextMessengerBackend.AuthService.SqsClient do
   def build_request(queue_url, message_body) do
     host = Application.get_env(:auth_service, :sqs)[:host]
     url = Application.get_env(:auth_service, :sqs)[:url]
-    session_token = Application.get_env(:auth_service, :aws)[:token]
+    session_token = Application.get_env(:auth_service, :aws)[:session_token]
 
     body = %{
       "Action" => "SendMessage",

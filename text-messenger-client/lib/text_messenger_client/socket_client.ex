@@ -24,7 +24,7 @@ defmodule TextMessengerClient.SocketClient do
     {:ok, %WebSocket{socket: socket, chat_channel: nil, notif_channel: notif_channel, access_token: access_token, id_token: id_token, chat_id: nil}}
   end
 
-  def send_message(%WebSocket{chat_channel: channel, chat_id: chat_id}, content) do
+  def send_message(%WebSocket{chat_channel: channel, chat_id: _chat_id}, content) do
     Logger.info("Sending chat message to server")
     encoded_content = Base.encode64(content)
     payload = %{content: encoded_content}
@@ -41,24 +41,14 @@ defmodule TextMessengerClient.SocketClient do
     Logger.info("Sending add_user request to server")
     payload = %{user_id: target_user_id}
 
-    case PhoenixClient.Channel.push_async(channel, "add_user", payload) do
-      :ok -> :ok
-      {:error, reason} ->
-        Logger.error("Failed to push add_user: #{inspect(reason)}")
-        {:error, reason}
-    end
+    PhoenixClient.Channel.push_async(channel, "add_user", payload)
   end
 
   def kick_user(%WebSocket{chat_channel: channel}, target_user_id) do
     Logger.info("Sending kick_user request to server")
     payload = %{user_id: target_user_id}
 
-    case PhoenixClient.Channel.push_async(channel, "kick_user", payload) do
-      :ok -> :ok
-      {:error, reason} ->
-        Logger.error("Failed to push add_user: #{inspect(reason)}")
-        {:error, reason}
-    end
+    PhoenixClient.Channel.push_async(channel, "kick_user", payload)
   end
 
   def change_chat(%WebSocket{socket: socket, chat_channel: channel} = websocket, new_chat_id) do

@@ -101,6 +101,6 @@ USER nobody
 # above and adding an entrypoint. See https://github.com/krallin/tini for details
 # ENTRYPOINT ["/tini", "--"]
 
-EXPOSE 4000
+EXPOSE 8888
 
 CMD ["sh", "-c", "export SECRET_KEY_BASE=$(cat $SECRET_KEY_BASE) && /app/bin/server"]

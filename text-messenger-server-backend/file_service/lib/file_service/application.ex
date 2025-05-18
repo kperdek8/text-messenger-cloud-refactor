@@ -9,7 +9,6 @@ defmodule TextMessengerBackend.FileService.Application do
   def start(_type, _args) do
     children = [
       TextMessengerBackend.FileServiceWeb.Telemetry,
-      TextMessengerBackend.FileService.Repo,
       {DNSCluster, query: Application.get_env(:file_service, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: TextMessengerBackend.FileService.PubSub},
       # Start the Finch HTTP client for sending emails

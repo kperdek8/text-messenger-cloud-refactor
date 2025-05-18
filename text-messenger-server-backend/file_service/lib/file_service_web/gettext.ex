@@ -20,5 +20,5 @@ defmodule TextMessengerBackend.FileServiceWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :file_service
+  use Gettext.Backend, otp_app: :file_service
 end

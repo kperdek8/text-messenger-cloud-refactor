@@ -9,6 +9,10 @@ defmodule TextMessengerBackend.UserServiceWeb.Router do
     plug TextMessengerBackend.UserServiceWeb.Auth.Cognito
   end
 
+  scope "/", TextMessengerBackend.UserServiceWeb do
+    get "/health", HealthController, :index
+  end
+
   scope "/api/", TextMessengerBackend.UserServiceWeb do
     pipe_through :api
   end
