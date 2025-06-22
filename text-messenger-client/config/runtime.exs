@@ -51,7 +51,7 @@ if config_env() == :prod do
 	check_origin: false,
     secret_key_base: secret_key_base,
 	server: true
-	
+
   config :text_messenger_client,
     api_url: System.get_env("API_URL") || "http://127.0.0.1:8080/api",
     socket_url: System.get_env("SOCKET_URL") || "ws://127.0.0.1:8080/socket/websocket"

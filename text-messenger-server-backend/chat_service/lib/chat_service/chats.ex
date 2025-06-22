@@ -12,7 +12,6 @@ defmodule TextMessengerBackend.ChatService.Chats do
     %Chat{}
     |> Chat.changeset(%{name: name})
     |> Repo.insert!()
-    |> to_protobuf_chat()
   end
 
   @doc """
@@ -25,7 +24,7 @@ defmodule TextMessengerBackend.ChatService.Chats do
 
     case chat do
       nil -> {:error, "Chat not found"}
-      chat -> {:ok, to_protobuf_chat(chat)}
+      chat -> {:ok, chat}
     end
   end
 
@@ -42,7 +41,6 @@ defmodule TextMessengerBackend.ChatService.Chats do
         order_by: [asc: c.name]
       )
       |> Repo.all()
-      |> to_protobuf_chats()
 
     {:ok, chats}
   end
@@ -86,7 +84,6 @@ defmodule TextMessengerBackend.ChatService.Chats do
         select: u.user_id
       )
       |> Repo.all()
-      |> to_protobuf_users()
 
     {:ok, users}
   end
@@ -95,7 +92,6 @@ defmodule TextMessengerBackend.ChatService.Chats do
   Fetches messages for a specific chat. Messages are returned in Protobuf format.
   """
   def get_chat_messages(chat_id) do
-    # Fetch messages for the chat where the key number is valid
     messages =
       from(m in ChatMessage,
         where: m.chat_id == ^chat_id,
@@ -103,7 +99,6 @@ defmodule TextMessengerBackend.ChatService.Chats do
         select: m
       )
       |> Repo.all()
-      |> to_protobuf_messages()
 
     {:ok, messages}
   end

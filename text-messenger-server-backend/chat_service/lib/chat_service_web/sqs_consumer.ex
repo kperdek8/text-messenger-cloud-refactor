@@ -1,8 +1,8 @@
-defmodule TextMessengerBackend.UserServiceWeb.SqsConsumer do
+defmodule TextMessengerBackend.ChatServiceWeb.SqsConsumer do
   use Broadway
 
   alias Broadway.Message
-  alias TextMessengerBackend.UserService.EventHandlers
+  alias TextMessengerBackend.ChatService.EventHandlers
 
   require Logger
 
@@ -12,12 +12,12 @@ defmodule TextMessengerBackend.UserServiceWeb.SqsConsumer do
       name: __MODULE__,
       producer: [
         module: {BroadwaySQS.Producer,
-                 queue_url: Application.get_env(:user_service, :sqs)[:queue_url],
+                 queue_url: Application.get_env(:chat_service, :sqs)[:chat_created_queue_url],
                  config: [
-                  access_key_id: Application.get_env(:user_service, :aws)[:access_key],
-                  secret_access_key: Application.get_env(:user_service, :aws)[:secret_key],
-				          security_token: Application.get_env(:user_service, :aws)[:token],
-                  region: Application.get_env(:user_service, :aws)[:region]],
+                  access_key_id: Application.get_env(:chat_service, :aws)[:access_key],
+                  secret_access_key: Application.get_env(:chat_service, :aws)[:secret_key],
+				          security_token: Application.get_env(:chat_service, :aws)[:session_token],
+                  region: Application.get_env(:chat_service, :aws)[:region]],
 				          wait_time_seconds: 1
                 }
       ],
@@ -35,14 +35,14 @@ defmodule TextMessengerBackend.UserServiceWeb.SqsConsumer do
 
   def handle_message(_processor, %Message{data: raw_json} = message, _context) do
     case Jason.decode(raw_json) do
-      {:ok, %{"event" => "user.created", "data" => user_data}} ->
-		Logger.info("Handling message")
-        case EventHandlers.handle_user_created(user_data) do
+      {:ok, %{"event" => "chat.created", "data" => data}} ->
+		    Logger.info("Handling message")
+        case EventHandlers.handle_chat_created(data) do
           :ok ->
             message
           {:error, reason} ->
-            Logger.error("User creation handler failed: #{inspect(reason)}")
-            Message.failed(message, "user_creation_failed")
+            Logger.error("Chat creation handler failed: #{inspect(reason)}")
+            Message.failed(message, "#{reason}")
         end
       {:ok, %{"event" => other_event}} ->
         Logger.info("Ignoring unsupported event: #{other_event}")

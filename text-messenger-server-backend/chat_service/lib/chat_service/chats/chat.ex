@@ -4,6 +4,7 @@ defmodule TextMessengerBackend.ChatService.Chats.Chat do
 
   # UUID v4 primary key
   @primary_key {:id, :binary_id, autogenerate: true}
+  @derive {Jason.Encoder, only: [:id, :name]}
   schema "chats" do
     field(:name, :string)
 

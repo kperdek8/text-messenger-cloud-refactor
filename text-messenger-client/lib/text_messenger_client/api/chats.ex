@@ -1,14 +1,13 @@
 defmodule TextMessengerClient.ChatsAPI do
   alias HTTPoison
   import TextMessengerClient.RequestHandler
-  alias TextMessenger.Protobuf.{Chats, Chat}
 
   def fetch_chats(token) do
     api_url = Application.fetch_env!(:text_messenger_client, :api_url)
-    endpoint_url = "#{api_url}/chats/"
+    endpoint_url = Path.join([api_url, "chats"])
 
     with {:ok, body} <- fetch_request(endpoint_url, token) do
-      Chats.decode(body)
+      {:ok, body}
     else
       {:error, reason} -> {:error, reason}
     end
@@ -16,10 +15,10 @@ defmodule TextMessengerClient.ChatsAPI do
 
   def fetch_chat(token, id) do
     api_url = Application.fetch_env!(:text_messenger_client, :api_url)
-    endpoint_url = "#{api_url}/chats/#{id}"
+    endpoint_url = Path.join([api_url, "chats", id])
 
     with {:ok, body} <- fetch_request(endpoint_url, token) do
-      Chat.decode(body)
+      {:ok, body}
     else
       {:error, reason} -> {:error, reason}
     end
@@ -28,10 +27,11 @@ defmodule TextMessengerClient.ChatsAPI do
   def create_chat(token, name) do
     api_url = Application.fetch_env!(:text_messenger_client, :api_url)
     params = URI.encode_query(%{name: name})
-    endpoint_url = "#{api_url}/chats/?#{params}"
+    path = Path.join([api_url, "chats"])
+    endpoint_url = "#{path}?#{params}"
 
     with {:ok, 200, body} <- post_request(endpoint_url, "", token) do
-      Chat.decode(body)
+      {:ok, body}
     else
       {:ok, status_code, error} when status_code != 200 -> {:error, error}
       {:error, reason} -> {:error, reason}

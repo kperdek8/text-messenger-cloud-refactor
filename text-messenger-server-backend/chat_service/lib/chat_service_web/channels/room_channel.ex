@@ -52,7 +52,7 @@ defmodule TextMessengerBackend.ChatServiceWeb.ChatChannel do
         TextMessengerBackend.ChatServiceWeb.Endpoint.broadcast("notifications:#{user_id}", "added_to_chat", %{chat_id: socket.assigns.chat_id})
         broadcast_from!(socket, "add_user", %{user_id: user_id})
 
-        queue_url = Application.get_env(:chat_service, :sqs)[:queue_url]
+        queue_url = Application.get_env(:chat_service, :sqs)[:user_added_queue_url]
         message = Events.UserAdded.new(%{
           id: user_id,
           chat_id: socket.assigns.chat_id

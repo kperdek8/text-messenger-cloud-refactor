@@ -12,7 +12,8 @@ defmodule TextMessengerBackend.ChatServiceWeb.UserSocket do
         Logger.debug("New socket connection: #{user_id}")
         {:ok, assign(socket, user_id: user_id)}
       {:error, reason} ->
-        Logger.warning("Error when verifying token connection #{reason}")
+        Logger.warning("Error when verifying token connection")
+        Logger.warning(reason)
         {:error, reason}
     end
   end

@@ -11,8 +11,20 @@ defmodule TextMessengerClient.RequestHandler do
     Logger.info("Sending GET request #{endpoint}")
 
     case HTTPoison.get(endpoint, headers) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, body}
+      {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: response_headers}} ->
+        content_type = get_content_type(response_headers)
+
+        case content_type do
+          "application/json" ->
+            {:ok, Jason.decode!(body, keys: :atoms)}
+
+          "application/x-protobuf" ->
+            {:ok, body} # Leave protobuf decoding to calling function
+
+          _ ->
+            Logger.warning("Unsupported content type #{content_type} in response")
+            {:error, "Unsupported content type: #{content_type}"}
+        end
 
       {:ok, %HTTPoison.Response{status_code: 401, body: body}} ->
         case Jason.decode(body) do

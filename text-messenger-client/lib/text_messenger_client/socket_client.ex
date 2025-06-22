@@ -3,25 +3,46 @@ defmodule TextMessengerClient.SocketClient do
 
   alias TextMessengerClient.Helpers.JWT
 
+  @default_timeout 5000
+
   defmodule WebSocket do
     defstruct [:socket, :chat_channel, :notif_channel, :access_token, :id_token, :chat_id, :liveview_pid]
   end
 
   def start(access_token, id_token) do
     socket_url = Application.fetch_env!(:text_messenger_client, :socket_url)
-    {:ok, socket} = PhoenixClient.Socket.start_link(
-      url: socket_url,
-      params: %{token: access_token}
-    )
-    wait_for_connection(socket)
-    notif_channel =
-      case join_notif_channel(socket, id_token) do
-        {:ok, channel} -> channel
-        {:error, %{"reason" => reason}} ->
-          IO.inspect("Could not join notification channel: #{reason}")
-          nil
-      end
-    {:ok, %WebSocket{socket: socket, chat_channel: nil, notif_channel: notif_channel, access_token: access_token, id_token: id_token, chat_id: nil}}
+
+    with {:ok, socket} <- PhoenixClient.Socket.start_link(
+          url: socket_url,
+          params: %{token: access_token}
+        ),
+        :connected <- wait_for_connection(socket),
+        {:ok, notif_channel} <- join_notif_channel(socket, id_token) do
+      {:ok, %WebSocket{
+        socket: socket,
+        chat_channel: nil,
+        notif_channel: notif_channel,
+        access_token: access_token,
+        id_token: id_token,
+        chat_id: nil
+      }}
+    else
+      {:error, %{"reason" => reason}} ->
+        Logger.error("Could not join notification channel: #{reason}")
+        {:error, {:join_failed, reason}}
+
+      {:error, reason} when is_binary(reason) ->
+        Logger.error("Socket connection failed: #{reason}")
+        {:error, {:connection_failed, reason}}
+
+      :timeout ->
+        Logger.error("Connection timeout")
+        {:error, :timeout}
+
+      error ->
+        Logger.error("Unexpected error: #{inspect(error)}")
+        {:error, :unexpected_error}
+    end
   end
 
   def send_message(%WebSocket{chat_channel: channel, chat_id: _chat_id}, content) do
@@ -92,11 +113,25 @@ defmodule TextMessengerClient.SocketClient do
     end
   end
 
-  defp wait_for_connection(socket_pid) do
-    unless PhoenixClient.Socket.connected?(socket_pid) do
-      :timer.sleep(100)
-      wait_for_connection(socket_pid)
+  defp wait_for_connection(socket_pid, timeout \\ 5_000) do
+    start_time = System.monotonic_time(:millisecond)
+
+    wait_loop = fn wait_loop, time_remaining ->
+      cond do
+        PhoenixClient.Socket.connected?(socket_pid) ->
+          :connected
+
+        time_remaining <= 0 ->
+          :timeout
+
+        true ->
+          :timer.sleep(100)
+          elapsed = System.monotonic_time(:millisecond) - start_time
+          wait_loop.(wait_loop, timeout - elapsed)
+      end
     end
+
+    wait_loop.(wait_loop, timeout)
   end
 
   def stop(%WebSocket{chat_channel: chat_channel, notif_channel: notif_channel, socket: socket}) do

@@ -3,6 +3,7 @@ defmodule TextMessengerBackend.ChatService.Chats.ChatMessage do
   import Ecto.Changeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
+  @derive {Jason.Encoder, only: [:id, :user_id, :chat_id, :content, :timestamp]}
   schema "chat_messages" do
     field(:user_id, :string)
     belongs_to(:chat, TextMessengerBackend.ChatService.Chats.Chat, type: :binary_id)

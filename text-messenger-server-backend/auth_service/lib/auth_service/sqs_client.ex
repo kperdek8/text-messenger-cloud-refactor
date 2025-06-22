@@ -4,6 +4,7 @@ defmodule TextMessengerBackend.AuthService.SqsClient do
 
   def send_message(queue_url, body) do
     signed_req = build_request(queue_url, body)
+    Logger.info("[SQS] Sending message #{inspect(body)} to queue #{queue_url}")
 
     case HTTPoison.post(signed_req.url, signed_req.body, signed_req.headers) do
       {:ok, %HTTPoison.Response{status_code: 200}} ->

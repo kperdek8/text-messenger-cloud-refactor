@@ -51,8 +51,6 @@ defmodule TextMessengerBackend.NotificationServiceWeb.SqsConsumer do
   end
 
   def handle_batch(:default, messages, _batch_info, context) do
-    Enum.map(messages, fn message ->
-      handle_message(:default, message, context)
-    end)
+    messages
   end
 end

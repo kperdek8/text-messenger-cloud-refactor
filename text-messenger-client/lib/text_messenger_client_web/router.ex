@@ -19,7 +19,7 @@ defmodule TextMessengerClientWeb.Router do
     pipe_through(:browser)
     post("/login", UserSessionController, :login)
     post("/logout", UserSessionController, :logout)
-	get "/health", HealthController, :index
+	  get "/health", HealthController, :index
     live_session :default, layout: false do
       live("/", HomePage)
       live("/login", LoginPage)

@@ -1,7 +1,7 @@
 defmodule TextMessengerClientWeb.HomePage do
   use TextMessengerClientWeb, :live_view
   alias TextMessengerClient.{ChatsAPI, MessagesAPI, UsersAPI}
-  alias TextMessenger.Protobuf.{ChatMessages, User, Users, Chat, Chats}
+  alias TextMessenger.Protobuf.{User, Users}
   alias TextMessengerClient.Helpers.{JWT}
   alias TextMessengerClient.Cache
 
@@ -25,7 +25,7 @@ defmodule TextMessengerClientWeb.HomePage do
         {:redirect, socket} ->
           {:ok, socket}
         _ ->
-          IO.inspect("Unexpected error occured")
+          Logger.error("Unexpected error occured")
           {:ok, socket}
       end
     end
@@ -141,7 +141,7 @@ defmodule TextMessengerClientWeb.HomePage do
         {:redirect, socket} ->
           {:noreply, socket}
         _ ->
-          IO.inspect("Unexpected error occured")
+          Logger.error("Unexpected error occured")
           {:noreply, socket}
       end
     else
@@ -174,7 +174,7 @@ defmodule TextMessengerClientWeb.HomePage do
       <!-- Left side -->
       <div id="left_side" class="flex flex-col w-1/5 h-full bg-gray-900 p-2 border-gray-700 rounded-lg">
         <div id="chat_list" class="flex flex-col w-full h-full overflow-y-auto bg-gray-900 p-2 rounded-lg">
-          <%= for %Chat{id: id, name: name} <- @chats do %>
+          <%= for %{id: id, name: name} <- @chats do %>
             <.live_component module={TextMessengerClientWeb.ChatPreviewComponent} id={id} message={"TODO: Zaimplementuj podgląd ostatniej wiadomość"} name={name} selected_chat={@selected_chat} />
           <% end %>
 
@@ -330,14 +330,14 @@ defmodule TextMessengerClientWeb.HomePage do
   end
 
   defp fetch_chat(%{assigns: %{access_token: token, chats: chats}} = socket, id) when not is_nil(token) do
-    with %Chat{} = chat <- ChatsAPI.fetch_chat(token, id) do
+    with {:ok, chat} <- ChatsAPI.fetch_chat(token, id) do
       {:ok, socket |> assign(chats: [chat | chats])}
     else
       {:error, "token_expired"} ->
         {:redirect, socket |> redirect(to: "/login")}
       {:error, reason} ->
-        IO.inspect(reason, label: "Unexpected error when fetching chat")
-        {:error, socket}
+        Logger.error("Unexpected error when fetching chat #{inspect(reason)}")
+        {:ok, socket}
     end
   end
 
@@ -346,14 +346,14 @@ defmodule TextMessengerClientWeb.HomePage do
   end
 
   defp fetch_chats(%{assigns: %{access_token: token}} = socket) when not is_nil(token) do
-    with %Chats{chats: chats} <- ChatsAPI.fetch_chats(token) do
+    with {:ok, %{chats: chats}} <- ChatsAPI.fetch_chats(token) do
       {:ok, socket |> assign(chats: chats)}
     else
       {:error, "token_expired"} ->
         {:redirect, socket |> redirect(to: "/login")}
       {:error, reason} ->
-        IO.inspect(reason, label: "Unexpected error when fetching chats")
-        {:error, socket}
+        Logger.error("Unexpected error when fetching chats #{inspect(reason)}")
+        {:ok, socket |> assign(chats: [])}
     end
   end
 
@@ -385,7 +385,7 @@ defmodule TextMessengerClientWeb.HomePage do
   defp remove_chat(%{assigns: %{chats: chats}} = socket, id) do
     updated_chats =
       chats
-      |> Enum.reject(fn chat -> chat.id == id end)
+      |> Enum.reject(fn chat -> chat["id"] == id end)
 
     {:ok, socket |> assign(chats: updated_chats)}
   end
@@ -399,9 +399,9 @@ defmodule TextMessengerClientWeb.HomePage do
         {:redirect, socket |> redirect(to: "/login")}
       {:error, 400} -> {:error, "Incorrect UUID"}
       {:error, 404} -> {:error, "User not found"}
-      error ->
-        IO.inspect("Unexpected error when fetching user: #{error}")
-        {:error, socket}
+      {:error, reason} ->
+        Logger.error("Unexpected error when fetching users: #{inspect(reason)}")
+        {:ok, socket}
     end
   end
 
@@ -410,7 +410,7 @@ defmodule TextMessengerClientWeb.HomePage do
   end
 
   defp fetch_users(%{assigns: %{access_token: token, selected_chat: id}} = socket) when not is_nil(token) and not is_nil(id) do
-    with {:ok, %Users{users: users}} <- UsersAPI.fetch_chat_members(token, id) do
+    with {:ok, users} <- UsersAPI.fetch_chat_members(token, id) do
       Enum.each(users, fn user ->
         Cache.put_username(user.id, user.name)
       end)
@@ -418,10 +418,9 @@ defmodule TextMessengerClientWeb.HomePage do
     else
       {:error, "token_expired"} ->
         {:redirect, socket |> redirect(to: "/login")}
-      error ->
-        IO.inspect("Unexpected error when fetching users")
-        IO.inspect(error)
-        {:error, socket}
+      {:error, reason} ->
+        Logger.error("Unexpected error when fetching users: #{inspect(reason)}")
+        {:ok, socket |> assign(users: [])}
     end
   end
 
@@ -451,14 +450,14 @@ defmodule TextMessengerClientWeb.HomePage do
   end
 
   defp fetch_messages(%{assigns: %{access_token: token, selected_chat: id}} = socket) when not is_nil(token) and not is_nil(id) do
-    with %ChatMessages{messages: messages} <- MessagesAPI.fetch_messages(token, id) do
+    with {:ok, %{messages: messages}} <- MessagesAPI.fetch_messages(token, id) do
       {:ok, socket |> assign(messages: messages)}
     else
       {:error, "token_expired"} ->
         {:redirect, socket |> redirect(to: "/login")}
-      _ ->
-        IO.inspect("Unexpected error when fetching messages")
-        {:error, socket}
+      {:error, reason} ->
+        Logger.error("Unexpected error when fetching messages #{inspect(reason)}")
+        {:ok, socket |> assign(messages: [])}
     end
   end
 
@@ -467,8 +466,15 @@ defmodule TextMessengerClientWeb.HomePage do
   end
 
   defp connect_to_websocket(%{assigns: %{access_token: access_token, id_token: id_token}} = socket) do
-    {:ok, websocket} = TextMessengerClient.SocketClient.start(access_token, id_token)
-    {:ok, socket |> assign(websocket: websocket)}
+    case TextMessengerClient.SocketClient.start(access_token, id_token) do
+      {:ok, websocket} ->
+        Logger.info("Connected to backend websocket")
+        {:ok, socket |> assign(websocket: websocket)}
+      {:error, error} ->
+        Logger.error("Could not connect to backend websocket")
+        Logger.error(error)
+        {:redirect, socket |> redirect(to: "/login")}
+    end
   end
 
   defp extract_logged_in_user_data(%{assigns: %{id_token: token}} = socket) do
@@ -482,7 +488,7 @@ defmodule TextMessengerClientWeb.HomePage do
       {:ok, socket}
     else
       {:error, reason} ->
-        IO.inspect(reason, label: "Error while extracting user id from token")
+        Logger.error("Error while extracting user id from token: #{inspect(reason)}")
     end
   end
 

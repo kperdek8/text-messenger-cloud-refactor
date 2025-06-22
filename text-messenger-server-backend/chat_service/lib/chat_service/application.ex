@@ -17,7 +17,8 @@ defmodule TextMessengerBackend.ChatService.Application do
       # Start a worker by calling: TextMessengerBackend.ChatService.Worker.start_link(arg)
       # {TextMessengerBackend.ChatService.Worker, arg},
       # Start to serve requests, typically the last entry
-      TextMessengerBackend.ChatServiceWeb.Endpoint
+      TextMessengerBackend.ChatServiceWeb.Endpoint,
+      TextMessengerBackend.ChatServiceWeb.SqsConsumer
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

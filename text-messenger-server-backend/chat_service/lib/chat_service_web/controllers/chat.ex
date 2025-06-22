@@ -1,14 +1,13 @@
 defmodule TextMessengerBackend.ChatServiceWeb.ChatController do
   use TextMessengerBackend.ChatServiceWeb, :controller
   alias TextMessengerBackend.ChatService.Chats
-  alias TextMessenger.Protobuf
 
   def fetch_chats(conn, _params) do
     user_id = conn.assigns.user_id
     {:ok, chat_list} = Chats.get_chats(user_id)
     conn
-    |> put_resp_content_type("application/x-protobuf")
-    |> send_resp(200, Protobuf.Chats.encode(chat_list))
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Jason.encode!(%{chats: chat_list}))
   end
 
   def fetch_chat(conn, %{"id" => id}) do
@@ -24,8 +23,8 @@ defmodule TextMessengerBackend.ChatServiceWeb.ChatController do
           case Chats.get_chat(valid_uuid) do
             {:ok, chat} ->
               conn
-              |> put_resp_content_type("application/x-protobuf")
-              |> send_resp(200, Protobuf.Chat.encode(chat))
+              |> put_resp_content_type("application/json")
+              |> send_resp(200, Jason.encode!(chat))
             {:error, message} ->
               conn
               |> send_resp(404, Jason.encode!(%{error: message}))
@@ -48,9 +47,10 @@ defmodule TextMessengerBackend.ChatServiceWeb.ChatController do
     user_id = conn.assigns.user_id
     chat = Chats.create_chat(name)
     Chats.add_user_to_chat(chat.id, user_id)
+    TextMessengerBackend.ChatServiceWeb.Endpoint.broadcast("notifications:#{user_id}", "added_to_chat", %{chat_id: chat.id})
     conn
-    |> put_resp_content_type("application/x-protobuf")
-    |> send_resp(200, Protobuf.Chat.encode(chat))
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Jason.encode!(chat))
   end
 
   def fetch_chat_members(conn, %{"id" => chat_id}) do
@@ -59,8 +59,8 @@ defmodule TextMessengerBackend.ChatServiceWeb.ChatController do
       {:ok, users} = Chats.get_chat_members(chat_id)
 
       conn
-      |> put_resp_content_type("application/x-protobuf")
-      |> send_resp(200, Protobuf.Users.encode(users))
+      |> put_resp_content_type("application/json")
+      |> send_resp(200, Jason.encode!(%{users: users}))
     else
       conn
       |> put_resp_content_type("application/json")

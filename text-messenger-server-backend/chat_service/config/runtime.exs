@@ -34,7 +34,13 @@ case runtime_env do
     config :chat_service, :aws, client_id: "mock-client-id"
     config :chat_service, :sqs, host: "localhost:9324"
     config :chat_service, :sqs, url: "http://localhost:9324/"
-    config :chat_service, :sqs, queue_url: "http://localhost:9324/queues/user_added_queue"
+    config :chat_service, :sqs, user_added_queue_url: "http://localhost:9324/queues/user_added_queue"
+    config :chat_service, :sqs, chat_created_queue_url: "http://localhost:9324/queues/chat_created_queue"
+    config :ex_aws, :sqs,
+      scheme: "http://",
+      host: "localhost",
+      port: 9324,
+      region: "elasticmq"
   :docker ->
     cognito_host = System.get_env("COGNITO_HOST") || "host.docker.internal:4444"
     sqs_host = System.get_env("SQS_HOST") || "host.docker.internal"
@@ -47,7 +53,13 @@ case runtime_env do
     config :chat_service, :aws, client_id: "mock-client-id"
     config :chat_service, :sqs, host: sqs_host
     config :chat_service, :sqs, url: "http://#{sqs_host}:9324/"
-    config :chat_service, :sqs, queue_url: "http://#{sqs_host}:9324/queues/user_added_queue"
+    config :chat_service, :sqs, user_added_queue_url: "http://#{sqs_host}:9324/queues/user_added_queue"
+    config :chat_service, :sqs, chat_created_queue_url: "http://#{sqs_host}:9324/queues/chat_created_queue"
+    config :ex_aws, :sqs,
+      scheme: "http://",
+      host: sqs_host,
+      port: 9324,
+      region: "elasticmq"
   :prod ->
     region = System.get_env("AWS_REGION")
     pool_id = System.get_env("AWS_USER_POOL_ID")
@@ -61,7 +73,8 @@ case runtime_env do
     config :chat_service, :aws, region: region
     config :chat_service, :sqs, host: "sqs.#{region}.amazonaws.com"
     config :chat_service, :sqs, url: "https://sqs.#{region}.amazonaws.com/"
-    config :chat_service, :sqs, queue_url: System.fetch_env!("AWS_SQS_QUEUE_URL")
+    config :chat_service, :sqs, user_added_queue_url: System.fetch_env!("AWS_SQS_USER_ADDED_QUEUE_URL")
+    config :chat_service, :sqs, chat_created_queue_url: System.fetch_env!("AWS_SQS_CHAT_CREATED_QUEUE_URL")
 end
 
 if config_env() == :prod do
